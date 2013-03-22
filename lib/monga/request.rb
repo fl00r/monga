@@ -42,17 +42,20 @@ module Monga
     def callback_perform
       response = Monga::Response.new
       @db.connection.send_command(command, @request_id) do |resp|
-        flags = resp[4]
-        doc = BSON.deserialize(resp.last)
-        # 
-        if flags & 2**0 > 0
-          err = Monga::Exceptions::CursorNotFound.new(doc)
-          response.fail(err)
-        elsif flags & 2**1 > 0
-          err = Monga::Exceptions::QueryFailure.new(doc)
-          response.fail(err)
+        if Exception === resp
+          response.fail(resp)
         else
-          response.succeed(doc)
+          flags = resp[4]
+          doc = BSON.deserialize(resp.last)
+          if flags & 2**0 > 0
+            err = Monga::Exceptions::CursorNotFound.new(doc)
+            response.fail(err)
+          elsif flags & 2**1 > 0
+            err = Monga::Exceptions::QueryFailure.new(doc)
+            response.fail(err)
+          else
+            response.succeed(doc)
+          end
         end
       end
       response

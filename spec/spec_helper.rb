@@ -13,3 +13,6 @@ EM.run do
   COLLECTION = DB["testCollection"]
   EM.stop
 end
+
+MONGODB_START = "sudo service mongodb start"
+MONGODB_STOP = "sudo service mongodb stop"

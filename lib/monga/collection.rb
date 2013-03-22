@@ -8,11 +8,6 @@ module Monga
       @name = name
     end
 
-    # db_name.collectio_name
-    def full_name
-      [@db.name, @name] * "."
-    end
-
     def query(query = {}, fields = {}, opts = {})
       Monga::Cursor.new(@name, query, fields, opts)
     end
@@ -27,14 +22,7 @@ module Monga
       options = {}
       options[:documents] = documents
       options.merge!(opts)
-
       Monga::Requests::Insert.new(@db, @name, options).perform
-    end
-
-    def safe_insert(documents, opts = {})
-      safe do
-        insert(documents, opts)
-      end
     end
 
     def update(query = {}, update = {}, flags = {})
@@ -84,7 +72,7 @@ module Monga
       req = @db.get_last_error
       req.callback do |res|
         if res["err"]
-          err = Monga::Exceptions::QeuryError.new(res["err"])
+          err = Monga::Exceptions::QueryError.new(res["err"])
           response.fail(err)
         else
           response.succeed(request_id)
@@ -92,10 +80,6 @@ module Monga
       end
       req.errback{ |err| resonse.fail(err) }
       response
-    end
-
-    def ensureIndex
-      # TODO
     end
   end
 end

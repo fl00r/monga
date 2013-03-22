@@ -42,6 +42,7 @@ module Monga
       @host = opts[:host]
       @port = opts[:port]
       @responses = {}
+      @reactor_running = true
     end
 
     def [](db_name)
@@ -75,14 +76,13 @@ module Monga
     end
 
     def connection_completed
-      # Gracefully close connection when EventMachine stop
+      Monga.logger.debug("Connection is established")
+
       EM.add_shutdown_hook do
-        Monga.logger.debug("EventMachine is stopped, closing connection")
         close
       end
 
       @connected = true
-      @reactor_running = true
       @pending_for_reconnect = false
       @buffer = Buffer.new
 
@@ -90,9 +90,15 @@ module Monga
     end
 
     def reconnect
-      unless @pending_for_reconnect || connected?
-        EM.schedule{ super(@host, @port) }
-        @pending_for_reconnect = true
+      unless connected?
+        if @reactor_running
+          super(@host, @port)
+        else
+          unless @pending_for_reconnect
+            EM.schedule{ super(@host, @port) }
+            @pending_for_reconnect = true
+          end
+        end
       end
     end
 
@@ -101,7 +107,9 @@ module Monga
     end
 
     def unbind
-      @responses.each{ |k, cb| cb.call(LostConnection.new("Mongo has lost connection"))}
+      Monga.logger.debug("Lost connection")
+
+      @responses.each{ |k, cb| cb.call(Monga::Exceptions::LostConnection.new("Mongo has lost connection"))}
       @connected = false
       set_deferred_status(nil)
 
@@ -111,6 +119,7 @@ module Monga
     end
 
     def close
+      Monga.logger.debug("EventMachine is stopped, closing connection")
       @reactor_running = false
     end
   end

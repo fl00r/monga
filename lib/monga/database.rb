@@ -26,5 +26,10 @@ module Monga
     def create_collection(collection_name, opts = {})
       cmd(query: { create: collection_name }, options: opts)
     end
+
+    # Just helper
+    def list_collections
+      cmd(eval: "db.getCollectionNames()")
+    end
   end
 end
