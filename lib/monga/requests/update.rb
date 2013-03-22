@@ -14,7 +14,7 @@ module Monga::Requests
 
         b = BSON::ByteBuffer.new
         b.put_int(0)
-        BSON::BSON_RUBY.serialize_cstr(b, @collection.full_name)
+        BSON::BSON_RUBY.serialize_cstr(b, full_name)
         b.put_int(flags)
         b.append!(BSON::BSON_C.serialize(query).to_s)
         b.append!(BSON::BSON_C.serialize(update).to_s)

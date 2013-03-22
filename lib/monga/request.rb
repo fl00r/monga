@@ -12,8 +12,9 @@ module Monga
       kill_cursor: 2007,
     }
 
-    def initialize(collection, options = {})
-      @collection = collection
+    def initialize(db, collection_name, options = {})
+      @db = db
+      @collection_name = collection_name
       @options = options
       @request_id = self.class.request_id
     end
@@ -33,14 +34,14 @@ module Monga
 
     # Fire and Forget
     def perform
-      @collection.connection.send_command(command)
+      @db.connection.send_command(command)
       @request_id
     end
 
     # Fire and wait
     def callback_perform
       response = Monga::Response.new
-      @collection.connection.send_command(command, @request_id) do |resp|
+      @db.connection.send_command(command, @request_id) do |resp|
         flags = resp[4]
         doc = BSON.deserialize(resp.last)
         # 
@@ -57,12 +58,6 @@ module Monga
       response
     end
 
-    # Fire, forget, check
-    def safe_perform
-      perform
-
-    end
-
     private
 
     def flags
@@ -71,6 +66,10 @@ module Monga
         flags = flags | 1 << byte if @options[k]
       end
       flags
+    end
+
+    def full_name
+      [@db.name, @collection_name] * "."
     end
 
     def op_code

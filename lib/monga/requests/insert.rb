@@ -12,7 +12,7 @@ module Monga::Requests
 
         b = BSON::ByteBuffer.new
         b.put_int(flags)
-        BSON::BSON_RUBY.serialize_cstr(b, @collection.full_name)
+        BSON::BSON_RUBY.serialize_cstr(b, full_name)
         case documents
         when Array
           documents.each do |doc|

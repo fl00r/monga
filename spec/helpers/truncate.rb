@@ -2,8 +2,10 @@ module Helpers
   module Truncate
     def teardown
       EM.run do
-        req = COLLECTION.delete
-        EM.add_timer(0.1){ EM.next_tick{ EM.stop } }
+        # req = COLLECTION.safe_delete
+        # req.callback{ |res| EM.stop }
+        # req.errback{ |err| raise err }
+        EM.stop
       end
     end
   end

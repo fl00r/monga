@@ -14,29 +14,27 @@ module Monga
     end
 
     def query(query = {}, fields = {}, opts = {})
-      Monga::Cursor.new(self, query, fields, opts)
+      Monga::Cursor.new(@name, query, fields, opts)
     end
     alias :find :query
 
     def find_one(query = {}, fields = {}, opts = {})
-      Monga::Cursor.new(self, query, fields, opts).limit(1)
+      Monga::Cursor.new(@name, query, fields, opts).limit(1)
     end
     alias :first :find_one
 
-    def insert(documents, opts = {}, safe = false)
+    def insert(documents, opts = {})
       options = {}
       options[:documents] = documents
       options.merge!(opts)
 
-      if safe
-        Monga::Requests::Insert.new(self, options).safe_perform
-      else
-        Monga::Requests::Insert.new(self, options).perform
-      end
+      Monga::Requests::Insert.new(@db, @name, options).perform
     end
 
     def safe_insert(documents, opts = {})
-      insert(documents, opts, true)
+      safe do
+        insert(documents, opts)
+      end
     end
 
     def update(query = {}, update = {}, flags = {})
@@ -44,16 +42,57 @@ module Monga
       options[:query] = query
       options[:update] = update
       options[:flags] = flags
-      Monga::Requests::Update.new(self, options).perform
+      Monga::Requests::Update.new(@db, @name, options).perform
     end
 
-    def delete(query = {}, opts = {}, safe = false)
+    def delete(query = {}, opts = {})
       options = {}
       options[:query] = query
       options.merge!(opts)
-      Monga::Requests::Delete.new(self, options).perform
+      Monga::Requests::Delete.new(@db, @name, options).perform
     end
     alias :remove :delete
+
+    def ensure_index(keys, opts={})
+      options = { query: keys, options: opts}
+      Monga::Requests::Query(@db, "system.indexes", options).perform
+    end
+
+    def get_indexes
+      options = { query: { getIndexes: 1 } }
+      Monga::Requests::Query.new(@db, @name, options).callback_perform
+    end
+
+    def drop
+      @db.drop_collection(@name)
+    end
+
+    # Safe methods
+    [:update, :insert, :delete].each do |meth|
+      class_eval <<-EOS
+        def safe_#{meth}(*args)
+          safe do
+            #{meth}(*args)
+          end
+        end
+      EOS
+    end
+
+    def safe
+      response = Monga::Response.new
+      request_id = yield
+      req = @db.get_last_error
+      req.callback do |res|
+        if res["err"]
+          err = Monga::Exceptions::QeuryError.new(res["err"])
+          response.fail(err)
+        else
+          response.succeed(request_id)
+        end
+      end
+      req.errback{ |err| resonse.fail(err) }
+      response
+    end
 
     def ensureIndex
       # TODO

@@ -16,14 +16,15 @@ module Monga::Requests
         skip = @options[:skip] || 0
         limit = @options[:limit] || -1
         query = @options[:query] || {}
-        fields = @options[:fields]
+        options = @options[:options] || {}
 
         b = BSON::ByteBuffer.new
         b.put_int(flags)
-        BSON::BSON_RUBY.serialize_cstr(b, @collection.full_name)
+        BSON::BSON_RUBY.serialize_cstr(b, full_name)
         b.put_int(skip)
         b.put_int(limit)
         b.append!(BSON::BSON_C.serialize(query).to_s)
+        b.append!(BSON::BSON_C.serialize(options).to_s) if options.any?
         b
       end
     end

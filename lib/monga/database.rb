@@ -12,11 +12,19 @@ module Monga
     end
 
     def cmd(cmd)
-      Monga::Requests::Query.new(self, query: cmd).callback_perform
+      Monga::Requests::Query.new(self, "$cmd", query: cmd).callback_perform
     end
 
-    def full_name
-      [name, "$cmd"] * "."
+    def get_last_error
+      cmd(getLastError: 1)
+    end
+
+    def drop_collection(collection_name)
+      cmd(drop: collection_name)
+    end
+
+    def create_collection(collection_name, opts = {})
+      cmd(query: { create: collection_name }, options: opts)
     end
   end
 end
