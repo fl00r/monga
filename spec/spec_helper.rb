@@ -16,3 +16,5 @@ end
 
 MONGODB_START = "sudo service mongodb start"
 MONGODB_STOP = "sudo service mongodb stop"
+
+# And welcome to callback Hell

@@ -55,6 +55,10 @@ module Monga
       @db.drop_collection(@name)
     end
 
+    def count
+      @db.count(@name)
+    end
+
     # Safe methods
     [:update, :insert, :delete].each do |meth|
       class_eval <<-EOS
@@ -72,7 +76,7 @@ module Monga
       req = @db.get_last_error
       req.callback do |res|
         if res["err"]
-          err = Monga::Exceptions::QueryError.new(res["err"])
+          err = Monga::Exceptions::QueryFailure.new(res["err"])
           response.fail(err)
         else
           response.succeed(request_id)

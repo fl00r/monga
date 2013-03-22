@@ -10,7 +10,7 @@ describe Monga::Connection do
           connection.connected?.must_equal false
           system MONGODB_START
           EM.add_timer(0.5) do
-            puts connection.connected?.must_equal true
+            connection.connected?.must_equal true
             EM.stop
           end
         end
