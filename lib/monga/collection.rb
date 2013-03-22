@@ -2,9 +2,15 @@ module Monga
   class Collection
     attr_reader :connection, :name
 
-    def initialize(connection, name)
-      @connection = connection
+    def initialize(db, name)
+      @db = db
+      @connection = @db.connection
       @name = name
+    end
+
+    # db_name.collectio_name
+    def full_name
+      [@db.name, @name] * "."
     end
 
     def query(query = {}, fields = {}, opts = {})
@@ -17,18 +23,20 @@ module Monga
     end
     alias :first :find_one
 
-    def insert(documents, opts = {})
+    def insert(documents, opts = {}, safe = false)
       options = {}
       options[:documents] = documents
-      options[:options] = opts
-      Monga::Requests::Insert.new(self, options).perform
+      options.merge!(opts)
+
+      if safe
+        Monga::Requests::Insert.new(self, options).safe_perform
+      else
+        Monga::Requests::Insert.new(self, options).perform
+      end
     end
 
     def safe_insert(documents, opts = {})
-      options = {}
-      options[:documents] = documents
-      options[:options] = opts
-      Monga::Requests::Insert.new(self, options).safe_perform
+      insert(documents, opts, true)
     end
 
     def update(query = {}, update = {}, flags = {})
@@ -39,9 +47,13 @@ module Monga
       Monga::Requests::Update.new(self, options).perform
     end
 
-    def delete(query, opts = {})
-      Monga::Requests::Delete.new(self, query, opts).perform
+    def delete(query = {}, opts = {}, safe = false)
+      options = {}
+      options[:query] = query
+      options.merge!(opts)
+      Monga::Requests::Delete.new(self, options).perform
     end
+    alias :remove :delete
 
     def ensureIndex
       # TODO

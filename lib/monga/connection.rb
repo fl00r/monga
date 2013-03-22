@@ -39,13 +39,13 @@ module Monga
     end
 
     def initialize(opts = {})
-      host = opts[:host]
-      port = opts[:port]
+      @host = opts[:host]
+      @port = opts[:port]
       @responses = {}
     end
 
-    def [](collection_name)
-      Monga::Collection.new(self, collection_name)
+    def [](db_name)
+      Monga::Database.new(self, db_name)
     end
 
     def self.connect(opts = {})
@@ -55,7 +55,9 @@ module Monga
       EM.connect(host, port, self, opts)
     end
 
-    def send_command(msg, request_id, &cb)
+    def send_command(msg, request_id=nil, &cb)
+      reconnect unless @reactor_running
+
       callback do
         send_data msg
       end
@@ -67,7 +69,8 @@ module Monga
       @buffer.append(data)
       @buffer.each do |message|
         request_id = message[2]
-        @responses[request_id].call(message)
+        cb = @responses.delete request_id
+        cb.call(message) if cb
       end
     end
 
@@ -79,9 +82,18 @@ module Monga
       end
 
       @connected = true
+      @reactor_running = true
+      @pending_for_reconnect = false
       @buffer = Buffer.new
 
       succeed
+    end
+
+    def reconnect
+      unless @pending_for_reconnect || connected?
+        EM.schedule{ super(@host, @port) }
+        @pending_for_reconnect = true
+      end
     end
 
     def connected?
@@ -89,16 +101,17 @@ module Monga
     end
 
     def unbind
-      unless @closed
-        @closed = true
-        raise Monga::Exceptions::LostConnection, "Connection to MongoDB lost"
+      @responses.each{ |k, cb| cb.call(LostConnection.new("Mongo has lost connection"))}
+      @connected = false
+      set_deferred_status(nil)
+
+      if @reactor_running
+        EM.add_timer(0.01){ reconnect }
       end
     end
 
     def close
-      unless @closed
-        @closed = true
-      end
+      @reactor_running = false
     end
   end
 end

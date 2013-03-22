@@ -14,31 +14,17 @@ module Monga::Requests
     def body
       @body ||= begin
         skip = @options[:skip] || 0
-        limit = @options[:limit] || 0
-        flags = @options[:flag_opts] || {}
-        query = @options[:query]
+        limit = @options[:limit] || -1
+        query = @options[:query] || {}
         fields = @options[:fields]
 
         b = BSON::ByteBuffer.new
         b.put_int(flags)
-        BSON::BSON_RUBY.serialize_cstr(b, @collection.name)
+        BSON::BSON_RUBY.serialize_cstr(b, @collection.full_name)
         b.put_int(skip)
         b.put_int(limit)
         b.append!(BSON::BSON_C.serialize(query).to_s)
         b
-      end
-    end
-
-    private
-
-    def flags
-      f = 0
-      bytes = @flag_opts.map{ |opt| FLAGS[opt] }.compact
-
-      return f if bytes.empty?
-
-      bytes.each do |b|
-        f = f ^ 2**b
       end
     end
   end

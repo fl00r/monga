@@ -2,13 +2,17 @@ require "eventmachine"
 require "bson"
 require "logger"
 
-require "monga/connection"
-require "monga/collection"
-require "monga/cursor"
-require "monga/exceptions"
-require "monga/response"
-require "monga/request"
-require "monga/requests/query"
+require File.expand_path("../monga/connection", __FILE__)
+require File.expand_path("../monga/database", __FILE__)
+require File.expand_path("../monga/collection", __FILE__)
+require File.expand_path("../monga/cursor", __FILE__)
+require File.expand_path("../monga/exceptions", __FILE__)
+require File.expand_path("../monga/response", __FILE__)
+require File.expand_path("../monga/request", __FILE__)
+require File.expand_path("../monga/requests/query", __FILE__)
+require File.expand_path("../monga/requests/insert", __FILE__)
+require File.expand_path("../monga/requests/delete", __FILE__)
+require File.expand_path("../monga/requests/update", __FILE__)
 
 module Monga
   extend self

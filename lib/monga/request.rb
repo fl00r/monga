@@ -38,20 +38,40 @@ module Monga
     end
 
     # Fire and wait
-    def calback_perform
+    def callback_perform
       response = Monga::Response.new
       @collection.connection.send_command(command, @request_id) do |resp|
-        response.succeed(resp)
+        flags = resp[4]
+        doc = BSON.deserialize(resp.last)
+        # 
+        if flags & 2**0 > 0
+          err = Monga::Exceptions::CursorNotFound.new(doc)
+          response.fail(err)
+        elsif flags & 2**1 > 0
+          err = Monga::Exceptions::QueryFailure.new(doc)
+          response.fail(err)
+        else
+          response.succeed(doc)
+        end
       end
       response
     end
 
     # Fire, forget, check
     def safe_perform
-      # TODO
+      perform
+
     end
 
     private
+
+    def flags
+      flags = 0
+      self.class::FLAGS.each do |k, byte|
+        flags = flags | 1 << byte if @options[k]
+      end
+      flags
+    end
 
     def op_code
       OP_CODES[self.class.op_name]
@@ -64,6 +84,7 @@ module Monga
     def self.request_id
       @request_id ||= 0
       @request_id += 1
+      @request_id >= 2**32 ? @request_id = 1 : @request_id
     end
 
     def self.op_name(op = nil)

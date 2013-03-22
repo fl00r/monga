@@ -40,8 +40,11 @@ From [MongoDB Wire Protocol Documentation](http://docs.mongodb.org/meta-driver/l
 Also `safe_insert` method provided, which will return Deferrable object. There are some options to manage your paranoia degree:
 
 > j (boolean) – If true, wait for the next journal commit before returning, rather than a full disk flush. If mongod does not have journaling enabled, this option has no effect.
+
 > w – When running with replication, this is the number of servers to replicate to before returning. A w value of 1 indicates the primary only. A w value of 2 includes the primary and at least one secondary, etc. In place of a number, you may also set w to majority to indicate that the command should wait until the latest write propagates to a majority of replica set members. If using w, you should also use wtimeout. Specifying a value for w without also providing a wtimeout may cause getLastError to block indefinitely.
+
 > fsync (boolean) – If true, wait for mongod to write this data to disk before returning. Defaults to false. In most cases, use the j option to ensure durability and consistency of the data set.
+
 > wtimeout (integer) – Optional. Milliseconds. Specify a value in milliseconds to control how long to wait for write propagation to complete. If replication does not complete in the given timeframe, the getLastError command will return with an error status.
 
 ```ruby
