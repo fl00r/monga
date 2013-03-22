@@ -46,7 +46,7 @@ module Monga
           response.fail(resp)
         else
           flags = resp[4]
-          doc = BSON.deserialize(resp.last)
+          doc = BSON::BSON_RUBY.deserialize(resp.last)
           if flags & 2**0 > 0
             err = Monga::Exceptions::CursorNotFound.new(doc)
             response.fail(err)

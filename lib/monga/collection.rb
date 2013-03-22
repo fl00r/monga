@@ -43,12 +43,31 @@ module Monga
 
     def ensure_index(keys, opts={})
       options = { query: keys, options: opts}
-      Monga::Requests::Query(@db, "system.indexes", options).perform
+      Monga::Requests::Query.new(@db, "system.indexes", options).perform
+    end
+
+    def ensure_index_version(key, opts={})
+      if version = opts[:v]
+        response = Monga::Response.new
+        req = get_indexes
+        req.errback do |err|
+          response.fail(err)
+        end
+        req.callback do |res|
+          response.succeed(res)
+        end
+        response
+      else
+        raise Monga::Exceptions::UndefinedIndexVersion, "you should pass `v` argument as a version to ensure index version, or use simple ensure_index method"
+      end
+    end
+
+    def drop_indexes
+      @db.drop_indexes
     end
 
     def get_indexes
-      options = { query: { getIndexes: 1 } }
-      Monga::Requests::Query.new(@db, @name, options).callback_perform
+      Monga::Requests::Query.new(@db, "system.indexes", {limit: -5}).callback_perform
     end
 
     def drop

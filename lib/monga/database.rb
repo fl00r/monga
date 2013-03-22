@@ -40,6 +40,10 @@ module Monga
       response
     end
 
+    def drop_indexes(collection_name, index)
+      cmd(dropIndexes: collection_name, inde: index)
+    end
+
     # Just helper
     def list_collections
       response = Monga::Response.new
