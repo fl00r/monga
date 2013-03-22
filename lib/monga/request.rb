@@ -46,15 +46,16 @@ module Monga
           response.fail(resp)
         else
           flags = resp[4]
-          doc = BSON::BSON_RUBY.deserialize(resp.last)
+          
+          docs = unpack_docs(resp.last)
           if flags & 2**0 > 0
-            err = Monga::Exceptions::CursorNotFound.new(doc)
+            err = Monga::Exceptions::CursorNotFound.new(docs.first)
             response.fail(err)
           elsif flags & 2**1 > 0
-            err = Monga::Exceptions::QueryFailure.new(doc)
+            err = Monga::Exceptions::QueryFailure.new(docs.first)
             response.fail(err)
           else
-            response.succeed(doc)
+            response.succeed(docs)
           end
         end
       end
@@ -62,6 +63,15 @@ module Monga
     end
 
     private
+
+    def unpack_docs(data)
+      docs = []
+      while !data.empty?
+        size = data.slice(0, 4).unpack("C").first
+        docs << BSON.deserialize(data.slice!(0, size))
+      end
+      docs
+    end
 
     def flags
       flags = 0

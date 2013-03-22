@@ -7,7 +7,7 @@ describe Monga::Collection do
         COLLECTION.ensure_index(field1: 1)
         req = COLLECTION.get_indexes
         req.callback do |res|
-          p ["LOL", res]
+          res
         end
       end
     end
