@@ -24,7 +24,8 @@ Or install it yourself as:
 
 ```ruby
 connection = Monga::Connection.new("localhost", 27017)
-collection = connection["myDb.myCollection"]
+db = connection["myDb"]
+collection = db["myCollection"]
 ```
 
 ### INSERT
@@ -68,8 +69,31 @@ request = collection.safe_insert({ author: "Madonna", title: "Burning Up" },
 #=> Deferrable Object
 request.callback{ |res| puts "ok"}
 request.errback{ |err| puts "ough, #{err.message}"}
-
 ```
+
+### FIND AND CURSOR
+
+Each find request internally creates cursor but returns all fetched data into callback. It could be inefficient for big amount of fetched data. So you can work with cursor manually by calling `cursor` method on find request.
+
+```ruby
+request = collection.find(artist: "Madonna")
+request.callback do |docs|
+  puts "Documents returned: #{docs.size}"
+end
+
+cursor = collection.find(artist: "Madonna").cursor
+cursor_iterator = cursor.each_doc do |doc|
+  puts "I have got new doc: #{doc}"
+end
+cursor_iterator.callback do
+  puts "Cursor has finished it's job"
+end
+```
+
+You can call skip, limit and batch_size method on find request
+* skip - how many docs should be skipped
+* limit - how many docs should be fetched from database
+* batch_size - how many doc should be fetched by cursor on each GET_MORE operation (less batch_size more queries but more releases into Event Loop)
 
 ## Features
 
