@@ -34,7 +34,7 @@ collection = db["myCollection"]
 
 From [MongoDB Wire Protocol Documentation](http://docs.mongodb.org/meta-driver/latest/legacy/mongodb-wire-protocol/#wire-op-query)*
 
-* Most of quotes are copypasted from this paper.
+*Most of quotes are copypasted from this paper.
 
 > If set, the database will not stop processing a bulk insert if one fails (eg due to duplicate IDs). This makes bulk insert behave similarly to a series of single inserts, except lastError will be set if any insert fails, not just the last one. If multiple errors occur, only the most recent will be reported by getLastError. (new in 1.9.1)
 

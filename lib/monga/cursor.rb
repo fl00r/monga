@@ -1,10 +1,12 @@
 module Monga
-  class Cursor
+  class Cursor < EM::DefaultDeferrable
     def initialize(options, select_options)
       @options = options
       @select_options = select_options
       @limit = 1
       @skip = 0
+
+      @deferred = false
     end
 
     def limit(count)
@@ -17,17 +19,33 @@ module Monga
       self
     end
 
-    def get_more(&blk)
-      find do |resp|
-        blk.call(resp)
-        @skip += limit
-        get_more(blk)
-      end
+    def each_doc(blk)
+      
     end
 
-    def find
-      request = Monga::Requests::Query.new()
-      request.perform
+    def callback(&blk)
+      unless @deferred
+        case @type
+        when "cursor"
+          find_each.callback_perform
+        when "all"
+          find_all.callback_perform
+        end
+        @deferred = true
+      end
+      super
+    end
+    alias :errback :callback
+    alias :timeout :callback
+
+    private
+
+    def find_all
+
+    end
+
+    def find_each
+      
     end
   end
 end
