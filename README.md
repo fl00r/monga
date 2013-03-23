@@ -93,7 +93,7 @@ end
 You can call skip, limit and batch_size method on find request
 * skip - how many docs should be skipped
 * limit - how many docs should be fetched from database
-* batch_size - how many doc should be fetched by cursor on each GET_MORE operation (less batch_size more queries but more releases into Event Loop)
+* batch_size - how many docs should be fetched by cursor on each GET_MORE operation (less batch_size will provide more queries but more releases into Event Loop)
 
 ## Features
 
