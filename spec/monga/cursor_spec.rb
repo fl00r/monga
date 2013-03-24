@@ -68,5 +68,19 @@ describe Monga::Cursor do
         cursor.errback{ |err| raise err }
       end
     end
+
+    it "should select all" do
+        cursor = Monga::Cursor.new(DB, COLLECTION.name, { query: { author: "Madonna" } })
+        docs = []
+        cursor.each_doc do |doc|
+          docs << doc
+        end
+        cursor.callback do
+          docs.size.must_equal 7
+          docs.all?{ |doc| doc["author"] == "Madonna" }.must_equal true
+          EM.stop
+        end
+        cursor.errback{ |err| raise err }
+    end
   end
 end
