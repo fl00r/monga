@@ -1,7 +1,9 @@
 module Monga::Requests
-  class GetMore
+  class GetMore < Monga::Request
+    op_name :get_more
+    
     def body
-      @body ||= 
+      @body ||= begin
         batch_size = @options[:batch_size] || 0
         cursor_id = @options[:cursor_id]
 

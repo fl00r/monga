@@ -14,7 +14,7 @@ module Monga::Requests
     def body
       @body ||= begin
         skip = @options[:skip] || 0
-        limit = @options[:limit] || -1
+        limit = get_limit
         query = @options[:query] || {}
         fields = @options[:fields] || {}
 
@@ -26,6 +26,18 @@ module Monga::Requests
         b.append!(BSON::BSON_C.serialize(query).to_s)
         b.append!(BSON::BSON_C.serialize(fields).to_s) if fields.any?
         b
+      end
+    end
+
+    private
+
+    def get_limit
+      if @options[:batch_size]
+        @options[:batch_size]
+      elsif @options[:limit]
+        -@options[:limit]
+      else
+        0
       end
     end
   end

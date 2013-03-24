@@ -70,6 +70,7 @@ describe Monga::Cursor do
     end
 
     it "should select all" do
+      EM.run do
         cursor = Monga::Cursor.new(DB, COLLECTION.name, { query: { author: "Madonna" } })
         docs = []
         cursor.each_doc do |doc|
@@ -81,6 +82,55 @@ describe Monga::Cursor do
           EM.stop
         end
         cursor.errback{ |err| raise err }
+      end
+    end
+
+    it "should select all with batch_size option" do
+      EM.run do
+        cursor = Monga::Cursor.new(DB, COLLECTION.name, { query: { author: "Madonna" }, batch_size: 2 })
+        docs = []
+        cursor.each_doc do |doc|
+          docs << doc
+        end
+        cursor.callback do
+          docs.size.must_equal 7
+          docs.all?{ |doc| doc["author"] == "Madonna" }.must_equal true
+          EM.stop
+        end
+        cursor.errback{ |err| raise err }
+      end
+    end
+
+    it "should select LIMIT < max with batch_size option" do
+      EM.run do
+        cursor = Monga::Cursor.new(DB, COLLECTION.name, { query: { author: "Madonna" }, batch_size: 2, limit: 5 })
+        docs = []
+        cursor.each_doc do |doc|
+          docs << doc
+        end
+        cursor.callback do
+          docs.size.must_equal 5
+          docs.all?{ |doc| doc["author"] == "Madonna" }.must_equal true
+          EM.stop
+        end
+        cursor.errback{ |err| raise err }
+      end
+    end
+
+    it "should select LIMIT > max with batch_size option" do
+      EM.run do
+        cursor = Monga::Cursor.new(DB, COLLECTION.name, { query: { author: "Madonna" }, batch_size: 2, limit: 15 })
+        docs = []
+        cursor.each_doc do |doc|
+          docs << doc
+        end
+        cursor.callback do
+          docs.size.must_equal 7
+          docs.all?{ |doc| doc["author"] == "Madonna" }.must_equal true
+          EM.stop
+        end
+        cursor.errback{ |err| raise err }
+      end
     end
   end
 end

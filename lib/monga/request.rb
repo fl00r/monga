@@ -54,7 +54,7 @@ module Monga
           elsif flags & 2**1 > 0
             err = Monga::Exceptions::QueryFailure.new(docs.first)
             response.fail(err)
-          elsif docs.first["err"]
+          elsif docs.first && docs.first["err"]
             err = Monga::Exceptions::QueryFailure.new(docs.first)
             response.fail(err)
           else

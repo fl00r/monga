@@ -8,7 +8,8 @@ module Monga
 
       @fetched_docs = []
       @count = 0
-      @limit = @options[:limit]
+      @limit = @options[:limit] ||= 0
+      @batch_size = @options[:batch_size] ||= 0
     end
 
     def each_doc(&blk)
@@ -28,7 +29,13 @@ module Monga
 
     def get_more
       if @cursor_id
-        opts = {} # todo
+        batch_size = if @limit > 0
+          rest = @limit - @count
+          rest < @batch_size ? -rest : @batch_size
+        else
+          @batch_size
+        end
+        opts = { cursor_id: @cursor_id, batch_size: batch_size }
         Monga::Requests::GetMore.new(@db, @collection_name, opts).callback_perform
       else
         Monga::Requests::Query.new(@db, @collection_name, @options).callback_perform
@@ -38,14 +45,16 @@ module Monga
     def next_document
       @count += 1
       Monga::Response.surround do |resp|
-        if @count > @limit
+        if @limit > 0 && @count > @limit
           resp.succeed(nil)
         elsif doc = @fetched_docs.shift
           resp.succeed(doc)
+        elsif @cursor_id == 0
+          resp.succeed(nil)
         else
           req = get_more
           req.callback do |data|
-            @cursor_id ||= data[1]
+            @cursor_id = data[5]
             @fetched_docs = data.last
             resp.succeed(@fetched_docs.shift)
           end
