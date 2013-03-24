@@ -16,7 +16,7 @@ module Monga::Requests
         skip = @options[:skip] || 0
         limit = @options[:limit] || -1
         query = @options[:query] || {}
-        options = @options[:options] || {}
+        fields = @options[:fields] || {}
 
         b = BSON::ByteBuffer.new
         b.put_int(flags)
@@ -24,7 +24,7 @@ module Monga::Requests
         b.put_int(skip)
         b.put_int(limit)
         b.append!(BSON::BSON_C.serialize(query).to_s)
-        b.append!(BSON::BSON_C.serialize(options).to_s) if options.any?
+        b.append!(BSON::BSON_C.serialize(fields).to_s) if fields.any?
         b
       end
     end

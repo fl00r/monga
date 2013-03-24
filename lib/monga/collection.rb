@@ -1,6 +1,6 @@
 module Monga
   class Collection
-    attr_reader :connection, :name
+    attr_reader :connection, :name, :db
 
     def initialize(db, name)
       @db = db
@@ -94,6 +94,7 @@ module Monga
       request_id = yield
       req = @db.get_last_error
       req.callback do |res|
+        res = res.first
         if res["err"]
           err = Monga::Exceptions::QueryFailure.new(res["err"])
           response.fail(err)
