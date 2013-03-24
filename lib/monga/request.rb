@@ -46,16 +46,19 @@ module Monga
           response.fail(resp)
         else
           flags = resp[4]
-          
           docs = unpack_docs(resp.last)
+          resp[-1] = docs
           if flags & 2**0 > 0
             err = Monga::Exceptions::CursorNotFound.new(docs.first)
             response.fail(err)
           elsif flags & 2**1 > 0
             err = Monga::Exceptions::QueryFailure.new(docs.first)
             response.fail(err)
+          elsif docs.first["err"]
+            err = Monga::Exceptions::QueryFailure.new(docs.first)
+            response.fail(err)
           else
-            response.succeed(docs)
+            response.succeed(resp)
           end
         end
       end

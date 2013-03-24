@@ -93,16 +93,10 @@ module Monga
       response = Monga::Response.new
       request_id = yield
       req = @db.get_last_error
-      req.callback do |res|
-        res = res.first
-        if res["err"]
-          err = Monga::Exceptions::QueryFailure.new(res["err"])
-          response.fail(err)
-        else
-          response.succeed(request_id)
-        end
+      req.callback do |data|
+        response.succeed(request_id)
       end
-      req.errback{ |err| resonse.fail(err) }
+      req.errback{ |err| response.fail(err) }
       response
     end
   end

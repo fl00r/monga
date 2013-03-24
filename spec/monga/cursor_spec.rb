@@ -6,20 +6,29 @@ describe Monga::Cursor do
   describe "simple ops" do
     before do
       EM.run do
-        req = COLLECTION.insert(author: "Madonna", title: "Burning Up")
-        req = COLLECTION.insert(author: "Madonna", title: "Freezing")
-        req = COLLECTION.insert(author: "Radiohead", title: "Karma Police")
+        req = COLLECTION.insert([
+          { author: "Madonna", title: "Burning Up" },
+          { author: "Madonna", title: "Freezing" },
+          { author: "Madonna", title: "Untitled Track 1" },
+          { author: "Madonna", title: "Untitled Track 2" },
+          { author: "Madonna", title: "Untitled Track 3" },
+          { author: "Madonna", title: "Untitled Track 4" },
+          { author: "Madonna", title: "Untitled Track 5" },
+          { author: "Radiohead", title: "Karma Police" },
+        ])
         EM.add_timer(0.05){ EM.next_tick{ EM.stop } }
       end
     end
 
     it "should return one item" do
       EM.run do
-        query = { author: "Madonna" }
-        select_options = {}
-        cursor = Monga::Cursor.new(COLLECTION, query, select_options).limit(1)
-        cursor.callback do |resp|
-          resp[0]["title"].must_equal "Burning Up"
+        cursor = Monga::Cursor.new(DB, COLLECTION.name, { query: { author: "Madonna" }, limit: 1 }, {})
+        docs = []
+        cursor.each_doc do |doc|
+          docs << doc
+        end
+        cursor.callback do
+          docs.first["title"].must_equal "Burning Up"
           EM.stop
         end
         cursor.errback{ |err| raise err }
@@ -28,12 +37,32 @@ describe Monga::Cursor do
 
     it "should return two items" do
       EM.run do
-        query = { author: "Madonna" }
-        select_options = {}
-        cursor = Monga::Cursor.new(COLLECTION, query, select_options).limit(2)
-        cursor.callback do |resp|
-          resp[0]["title"].must_equal "Burning Up"
-          resp[1]["title"].must_equal "Freezing"
+        cursor = Monga::Cursor.new(DB, COLLECTION.name, { query: { author: "Madonna" }, limit: 2 }, {})
+        docs = []
+        cursor.each_doc do |doc|
+          docs << doc
+        end
+        cursor.callback do
+          docs.size.must_equal 2
+          docs.first["title"].must_equal "Burning Up"
+          docs.last["title"].must_equal "Freezing"
+          EM.stop
+        end
+        cursor.errback{ |err| raise err }
+      end
+    end
+
+    it "should skip two items" do
+      EM.run do
+        cursor = Monga::Cursor.new(DB, COLLECTION.name, { query: { author: "Madonna" }, limit: 2, skip: 2 })
+        docs = []
+        cursor.each_doc do |doc|
+          docs << doc
+        end
+        cursor.callback do
+          docs.size.must_equal 2
+          docs.first["title"].must_equal "Untitled Track 1"
+          docs.last["title"].must_equal "Untitled Track 2"
           EM.stop
         end
         cursor.errback{ |err| raise err }

@@ -1,21 +1,22 @@
 module Monga
   class Cursor < EM::DefaultDeferrable
-    def initialize(db, collection_name, options, flags)
+    def initialize(db, collection_name, options = {}, flags = {})
       @db = db
       @collection_name = collection_name
       @options = options
       @flags = flags
 
       @fetched_docs = []
-      @count = count
+      @count = 0
       @limit = @options[:limit]
     end
 
-    def each_doc
+    def each_doc(&blk)
       req = next_document
       req.callback do |doc|
         if doc
-          yield doc
+          blk.call doc
+          each_doc(&blk)
         else
           succeed
         end
@@ -43,8 +44,9 @@ module Monga
           resp.succeed(doc)
         else
           req = get_more
-          req.callback do |docs|
-            @fetched_docs = docs
+          req.callback do |data|
+            @cursor_id ||= data[1]
+            @fetched_docs = data.last
             resp.succeed(@fetched_docs.shift)
           end
           req.errback do |err|
