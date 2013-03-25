@@ -22,7 +22,7 @@ module Monga
       options[:query] = query
       options[:fields] = fields
       options.merge! opts
-      
+
       Monga::Response.surround do |resp|
         req = Monga::Miner.new(db, name, options).limit(1)
         req.callback{ |data| resp.succeed data.first }
@@ -55,8 +55,13 @@ module Monga
     alias :remove :delete
 
     def ensure_index(keys, opts={})
-      options = { query: keys, options: opts}
-      Monga::Requests::Query.new(@db, "system.indexes", options).perform
+      doc = {}
+      doc.merge!(opts)
+      # Read docs about naming
+      doc[:name] ||= keys.to_a.flatten * "_"
+      doc[:key] = keys
+      doc[:ns] = "#{db.name}.name"
+      Monga::Requests::Insert.new(@db, "system.indexes", {documents: doc}).perform
     end
 
     def ensure_index_version(key, opts={})
@@ -75,12 +80,12 @@ module Monga
       end
     end
 
-    def drop_indexes
-      @db.drop_indexes
+    def drop_indexes(indexes = "*")
+      @db.drop_indexes(@name, indexes)
     end
 
     def get_indexes
-      Monga::Requests::Query.new(@db, "system.indexes", {limit: -5}).callback_perform
+      Monga::Miner.new(@db, "system.indexes")
     end
 
     def drop

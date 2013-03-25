@@ -28,16 +28,20 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 - [x] get_last_error
 
 ### Collection
-- [x] find
-- [x] find_one
-- [ ] insert
+- [x] QUERY_OP
+-- [x] find
+-- [x] find_one (first)
+- [x] INSERT_OP
+-- [x] insert (single)
+-- [x] insert (batch)
+-- [x] continue_on_error
 - [ ] update
 - [ ] delete
 - [ ] safe_* (insert/update/delete)
-- [ ] get_indexes
-- [ ] ensure_index
+- [x] get_indexes
+- [x] ensure_index
 - [ ] ensure_index_with_version
-- [ ] drop_index
+- [x] drop_index
 - [ ] count
 - [x] each
 - [x] cursor
@@ -48,3 +52,10 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 - [x] batch_size
 - [x] get_more
 - [x] next_document
+- [ ] Flags
+-- [ ] tailable_cursor
+-- [ ] slave_ok
+-- [ ] no_cursor_timeout
+-- [ ] await_data
+-- [ ] exhaust
+-- [ ] partial

@@ -9,7 +9,7 @@ module Monga
       @fetched_docs = []
       @count = 0
       @limit = @options[:limit] ||= 0
-      @batch_size = @options[:batch_size] ||= 0
+      @batch_size = @options[:batch_size]
     end
 
     def each_doc(&blk)

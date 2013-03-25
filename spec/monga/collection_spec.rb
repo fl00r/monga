@@ -114,6 +114,76 @@ describe Monga::Collection do
         req.errback{ |err| raise err }
       end
     end
+  end
 
+  describe "insert" do
+    it "should single insert" do
+      EM.run do
+        COLLECTION.insert(todo: "shopping")
+        EM.add_timer(0.05) do
+          req = COLLECTION.first
+          req.callback do |resp|
+            resp["todo"].must_equal "shopping"
+            EM.stop
+          end
+          req.errback{ |err| raise err }
+        end
+      end
+    end
+
+    it "should safe_insert" do
+      EM.run do
+        req = COLLECTION.safe_insert(todo: "shopping")
+        req.callback do
+          req = COLLECTION.first
+          req.callback do |resp|
+            resp["todo"].must_equal "shopping"
+            EM.stop
+          end
+          req.errback{ |err| raise err }
+        end
+        req.errback{ |err| raise err }
+      end
+    end
+
+    it "should batch insert" do
+      EM.run do
+        req = COLLECTION.safe_insert([{todo: "shopping"}, {todo: "walking"}, {todo: "dinner with Scarlett"}])
+        req.callback do
+          req = COLLECTION.find
+          req.callback do |resp|
+            resp.size.must_equal 3
+            resp.map{|r| r["todo"]}.must_equal ["shopping", "walking", "dinner with Scarlett"]
+            EM.stop
+          end
+          req.errback{ |err| raise err }
+        end
+        req.errback{ |err| raise err }
+      end
+    end
+
+    it "should fail on uniq index" do
+      EM.run do
+        req = COLLECTION.safe_insert({book_id: 1, title: "Bible"}, {book_id: 1, title: "Lord of the Ring"})
+        req.callback do
+          EM.stop
+        end
+        req.errback{ |err| raise err }
+      end
+    end
+  end
+
+  describe "indexes" do
+    it "should create an index" do
+      EM.run do
+        COLLECTION.ensure_index({artist: 1})
+        req = COLLECTION.get_indexes
+        req.callback do |indexes|
+          indexes.any?{ |ind| ind["key"] == {"artist" => 1}}.must_equal true
+          EM.stop
+        end
+        req.errback{ |err| raise err }
+      end
+    end
   end
 end

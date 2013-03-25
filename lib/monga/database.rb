@@ -11,51 +11,77 @@ module Monga
       Monga::Collection.new(self, collection_name)
     end
 
-    def cmd(cmd, options={})
-      Monga::Requests::Query.new(self, "$cmd", query: cmd, options: options).callback_perform
+    def cmd(cmd, opts={})
+      options = {}
+      options[:query] = cmd
+      options.merge! opts
+      Monga::Miner.new(self, "$cmd", options)
     end
 
     def get_last_error
-      cmd(getLastError: 1)
+      with_response do
+        cmd(getLastError: 1).limit(1)
+      end
     end
 
     def drop_collection(collection_name)
-      cmd(drop: collection_name)
+      with_response do
+        cmd(drop: collection_name).limit(1)
+      end
     end
 
     def create_collection(collection_name, opts = {})
-      cmd({create: collection_name}.merge(opts))
+      with_response do
+        cmd({create: collection_name}.merge(opts)).limit(1)
+      end
     end
 
     def count(collection_name)
-      response = Monga::Response.new
-      req = cmd(count: collection_name)
-      req.callback do |res|
-        response.succeed(res["n"].to_i)
+      Monga::Response.surround do |resp|
+        req = cmd(count: collection_name)
+        req.callback do |res|
+          resp.succeed(res["n"].to_i)
+        end
+        req.errback do |err|
+          resp.fail(err)
+        end
       end
-      req.errback do |res|
-        exception = Monga::Exceptions::QueryFailure.new(res)
-        response.fail(exception)
-      end
-      response
     end
 
-    def drop_indexes(collection_name, index)
-      cmd(dropIndexes: collection_name, inde: index)
+    def drop_indexes(collection_name, indexes)
+      with_response do
+        cmd(dropIndexes: collection_name, index: indexes).limit(1)
+      end
     end
 
     # Just helper
     def list_collections
-      response = Monga::Response.new
-      req = cmd(eval: "db.getCollectionNames()")
-      req.callback do |res|
-        response.succeed(res["retval"])
+      Monga::Response.surround do |resp|
+        req = cmd(eval: "db.getCollectionNames()")
+        req.callback do |res|
+          resp.succeed(res["retval"])
+        end
+        req.errback do |err|
+          resp.fail(err)
+        end
       end
-      req.errback do |res|
-        exception = Monga::Exceptions::QueryFailure.new(res)
-        response.fail(exception)
+    end
+
+    private
+
+    def with_response
+      Monga::Response.surround do |resp|
+        req = yield
+        req.callback do |data|
+          if data.any?
+            resp.succeed(data)
+          else
+            exception = Monga::Exceptions::QueryFailure.new("Nothing was returned for your query: #{req.options[:query]}")
+            resp.fail(exception)
+          end
+        end
+        req.errback{ |err| resp.fail err }
       end
-      response
     end
   end
 end

@@ -3,15 +3,17 @@
 # Also it hides Deferrable that could return all objects that cursor do.
 module Monga
   class Miner < EM::DefaultDeferrable
-    def initialize(db, collection_name, options)
+    attr_reader :options
+    
+    def initialize(db, collection_name, options={})
       @db = db
       @collection_name = collection_name
       @options = options
 
       # Defaults
-      @options[:limit] = 0
-      @options[:skip] = 0
-      @options[:batch_size] = 0
+      @options[:query] ||= {}
+      @options[:limit] ||= 0
+      @options[:skip] ||= 0
     end
 
     def cursor(flags = {})

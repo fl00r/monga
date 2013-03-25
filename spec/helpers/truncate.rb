@@ -2,9 +2,11 @@ module Helpers
   module Truncate
     def teardown
       EM.run do
-        req = COLLECTION.safe_delete
-        req.callback{ |res| EM.stop }
-        req.errback{ |err| raise err }
+        req = COLLECTION.drop
+        req.callback do |res|
+          EM.stop
+        end
+        req.errback{ |err| p "!!!!"*100; raise err }
       end
     end
   end
