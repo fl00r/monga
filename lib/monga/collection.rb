@@ -9,12 +9,25 @@ module Monga
     end
 
     def query(query = {}, fields = {}, opts = {})
-      Monga::Cursor.new(@name, query, fields, opts)
+      options = {}
+      options[:query] = query
+      options[:fields] = fields
+      options.merge! opts
+      Monga::Miner.new(db, name, options)
     end
     alias :find :query
 
     def find_one(query = {}, fields = {}, opts = {})
-      Monga::Cursor.new(@name, query, fields, opts).limit(1)
+      options = {}
+      options[:query] = query
+      options[:fields] = fields
+      options.merge! opts
+      
+      Monga::Response.surround do |resp|
+        req = Monga::Miner.new(db, name, options).limit(1)
+        req.callback{ |data| resp.succeed data.first }
+        req.errback{ |err| resp.fail err }
+      end
     end
     alias :first :find_one
 

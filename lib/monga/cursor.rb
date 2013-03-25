@@ -25,6 +25,7 @@ module Monga
       req.errback do |err|
         fail err
       end
+      self
     end
 
     def get_more

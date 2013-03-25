@@ -5,6 +5,7 @@ require "logger"
 require File.expand_path("../monga/connection", __FILE__)
 require File.expand_path("../monga/database", __FILE__)
 require File.expand_path("../monga/collection", __FILE__)
+require File.expand_path("../monga/miner", __FILE__)
 require File.expand_path("../monga/cursor", __FILE__)
 require File.expand_path("../monga/exceptions", __FILE__)
 require File.expand_path("../monga/response", __FILE__)

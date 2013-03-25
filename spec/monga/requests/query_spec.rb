@@ -20,7 +20,6 @@ describe Monga::Requests::Query do
       command = { query: { author: "Madonna" }, limit: 2 }
       req = Monga::Requests::Query.new(DB, COLLECTION.name, command).callback_perform
       req.callback do |res|
-        p res
         EM.stop
       end
     end

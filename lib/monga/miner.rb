@@ -1,3 +1,6 @@
+# Miner is a "proxy" object to Cursor.
+# It dinamically stores Cursor options and at any moment can return cursor.
+# Also it hides Deferrable that could return all objects that cursor do.
 module Monga
   class Miner < EM::DefaultDeferrable
     def initialize(db, collection_name, options)
@@ -12,26 +15,26 @@ module Monga
     end
 
     def cursor(flags = {})
-      @cursor ||= Monga::Cursor.new(@db, @collection_name, @options, flags)
+      @cursor = Monga::Cursor.new(@db, @collection_name, @options, flags)
     end
 
     def limit(count)
-      @options[:limit] = count && self
+      @options[:limit] = count and self
     end
 
     def skip(count)
-      @options[:skip] = count && self
+      @options[:skip] = count and self
     end
 
     def batch_size(count)
-      @options[:batch_size] = count && self
+      @options[:batch_size] = count and self
     end
 
     # Lazy operation execution
     [:callback, :errback, :timeout].each do |meth|
       class_eval <<-EOS
         def #{meth}(*args)
-          mine! && @defered = true unless @deferred
+          mine! && @deferred = true unless @deferred
           super
         end
       EOS
@@ -41,13 +44,13 @@ module Monga
 
     def mine!
       docs = []
-      cursor.each_doc do |doc|
+      itrator = cursor.each_doc do |doc|
         docs << doc
       end
-      cursor.callback do
+      itrator.callback do
         succeed docs
       end
-      cursor.errback do |err|
+      itrator.errback do |err|
         fail err
       end
     end

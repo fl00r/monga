@@ -11,6 +11,7 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 - [x] Autoreconnect
 - [ ] Master Slave connection with SlaveOk
 - [ ] Replica Sets Support
+- [ ] Sharding Support
 
 ### Protocol
 - [x] OP_QUERY
@@ -27,8 +28,8 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 - [x] get_last_error
 
 ### Collection
-- [ ] find
-- [ ] find_one
+- [x] find
+- [x] find_one
 - [ ] insert
 - [ ] update
 - [ ] delete
@@ -38,7 +39,12 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 - [ ] ensure_index_with_version
 - [ ] drop_index
 - [ ] count
+- [x] each
+- [x] cursor
 
 ### Cursor
-- [x] get all
-- [x] each
+- [x] limit
+- [x] skip
+- [x] batch_size
+- [x] get_more
+- [x] next_document

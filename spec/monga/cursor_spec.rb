@@ -6,7 +6,7 @@ describe Monga::Cursor do
   describe "simple ops" do
     before do
       EM.run do
-        req = COLLECTION.insert([
+        req = COLLECTION.safe_insert([
           { author: "Madonna", title: "Burning Up" },
           { author: "Madonna", title: "Freezing" },
           { author: "Madonna", title: "Untitled Track 1" },
@@ -16,7 +16,8 @@ describe Monga::Cursor do
           { author: "Madonna", title: "Untitled Track 5" },
           { author: "Radiohead", title: "Karma Police" },
         ])
-        EM.add_timer(0.05){ EM.next_tick{ EM.stop } }
+        req.callback{ EM.stop }
+        req.errback{ |err| raise err }
       end
     end
 
