@@ -6,9 +6,6 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 
 ## To Do List
 
-- [ ] 1
-- [x] 2
-
 ### Connection
 - [x] Connection to single instance
 - [x] Autoreconnect
