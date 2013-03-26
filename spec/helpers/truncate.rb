@@ -6,7 +6,7 @@ module Helpers
         req.callback do |res|
           EM.stop
         end
-        req.errback{ |err| p "!!!!"*100; raise err }
+        req.errback{ |err| raise err }
       end
     end
   end

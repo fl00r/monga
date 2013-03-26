@@ -13,12 +13,14 @@ module Monga
     end
 
     def each_doc(&blk)
+          p ["STACK", caller.size]
       req = next_batch
       req.callback do |docs|
         if docs
           docs.each do |doc|
             blk.call doc
           end
+          @fetched_docs.clear
           each_doc(&blk)
         else
           succeed
@@ -49,15 +51,14 @@ module Monga
       Monga::Response.surround do |resp|
         if @limit > 0 && @count > @limit
           resp.succeed(nil)
-        elsif size = @fetched_docs.size > 0
-          if @count + size > @limit
-            rest = @limit - @count
-            resp.succeed(@fetched_docs.take(rest))
-            @count += rest
+        elsif (size = @fetched_docs.size) > 0
+          if @limit > 0 && @count + size > @limit
+            size = @limit - @count
+            resp.succeed(@fetched_docs.take(size))
           else
             resp.succeed(@fetched_docs)
-            @count += size
           end
+          @count += size
         elsif @cursor_id == 0
           resp.succeed(nil)
         else
@@ -66,14 +67,13 @@ module Monga
             @cursor_id = data[5]
             @fetched_docs = data.last
             size = @fetched_docs.size
-            if @count + size > @limit
-              rest = @limit - @count
-              resp.succeed(@fetched_docs.take(rest))
-              @count += rest
+            if @limit > 0 && @count + size > @limit
+              size = @limit - @count
+              resp.succeed(@fetched_docs.take(size))
             else
               resp.succeed(@fetched_docs)
-              @count += size
             end
+            @count += size
           end
           req.errback do |err|
             resp.fail err

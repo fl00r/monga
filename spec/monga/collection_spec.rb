@@ -186,4 +186,27 @@ describe Monga::Collection do
       end
     end
   end
+
+  describe "fetch many data" do
+    before do
+      MANY = 1000
+      EM.run do
+        req = COLLECTION.safe_insert(
+          MANY.times.map{ |i| { row: (i+1).to_s } }
+        )
+        req.callback{ EM.stop }
+        req.errback{ |err| raise err }
+      end
+    end
+    it "should fetch em all" do
+      EM.run do
+        req = COLLECTION.find
+        req.callback do |docs|
+          docs.size.must_equal MANY
+          EM.stop
+        end
+        req.errback{ |err| raise err }
+      end
+    end
+  end
 end
