@@ -13,10 +13,12 @@ module Monga
     end
 
     def each_doc(&blk)
-      req = next_document
-      req.callback do |doc|
-        if doc
-          blk.call doc
+      req = next_batch
+      req.callback do |docs|
+        if docs
+          docs.each do |doc|
+            blk.call doc
+          end
           each_doc(&blk)
         else
           succeed
@@ -43,13 +45,50 @@ module Monga
       end
     end
 
-    def next_document
-      @count += 1
+    def next_batch
       Monga::Response.surround do |resp|
         if @limit > 0 && @count > @limit
           resp.succeed(nil)
+        elsif size = @fetched_docs.size > 0
+          if @count + size > @limit
+            rest = @limit - @count
+            resp.succeed(@fetched_docs.take(rest))
+            @count += rest
+          else
+            resp.succeed(@fetched_docs)
+            @count += size
+          end
+        elsif @cursor_id == 0
+          resp.succeed(nil)
+        else
+          req = get_more
+          req.callback do |data|
+            @cursor_id = data[5]
+            @fetched_docs = data.last
+            size = @fetched_docs.size
+            if @count + size > @limit
+              rest = @limit - @count
+              resp.succeed(@fetched_docs.take(rest))
+              @count += rest
+            else
+              resp.succeed(@fetched_docs)
+              @count += size
+            end
+          end
+          req.errback do |err|
+            resp.fail err
+          end
+        end
+      end
+    end
+
+    def next_document
+      Monga::Response.surround do |resp|
+        if @limit > 0 && @count >= @limit
+          resp.succeed(nil)
         elsif doc = @fetched_docs.shift
           resp.succeed(doc)
+          @count += 1
         elsif @cursor_id == 0
           resp.succeed(nil)
         else
@@ -58,6 +97,7 @@ module Monga
             @cursor_id = data[5]
             @fetched_docs = data.last
             resp.succeed(@fetched_docs.shift)
+            @count += 1
           end
           req.errback do |err|
             resp.fail err
