@@ -13,7 +13,6 @@ module Monga
     end
 
     def each_doc(&blk)
-          p ["STACK", caller.size]
       req = next_batch
       req.callback do |docs|
         if docs

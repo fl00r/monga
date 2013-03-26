@@ -60,28 +60,16 @@ module Monga
       # Read docs about naming
       doc[:name] ||= keys.to_a.flatten * "_"
       doc[:key] = keys
-      doc[:ns] = "#{db.name}.name"
+      doc[:ns] = "#{db.name}.#{name}"
       Monga::Requests::Insert.new(@db, "system.indexes", {documents: doc}).perform
     end
-
-    def ensure_index_version(key, opts={})
-      if version = opts[:v]
-        response = Monga::Response.new
-        req = get_indexes
-        req.errback do |err|
-          response.fail(err)
-        end
-        req.callback do |res|
-          response.succeed(res)
-        end
-        response
-      else
-        raise Monga::Exceptions::UndefinedIndexVersion, "you should pass `v` argument as a version to ensure index version, or use simple ensure_index method"
-      end
+    
+    def drop_index(indexes)
+      @db.drop_indexes(@name, indexes)
     end
 
-    def drop_indexes(indexes = "*")
-      @db.drop_indexes(@name, indexes)
+    def drop_indexes
+      @db.drop_indexes(@name, "*")
     end
 
     def get_indexes

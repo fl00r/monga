@@ -26,24 +26,29 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 * [x] create_collection
 * [x] drop_collection
 * [x] get_last_error
+* [x] drop_indexes
+* [x] get_indexes
 
 ### Collection
-* [x] QUERY_OP
+* QUERY_OP
     * [x] find
     * [x] find_one (first)
-* [x] INSERT_OP
+* INSERT_OP
     * [x] insert (single)
     * [x] insert (batch)
     * [x] continue_on_error
-* [ ] update
-* [ ] delete
-* [ ] safe_* (insert/update/delete)
-* [x] get_indexes
-* [x] ensure_index
-* [ ] ensure_index_with_version
-* [x] drop_index
+    * [x] safe_insert 
+* UPDATE_OP
+    * [ ] update
+    * [ ] safe_update
+* DELETE_OP
+    * [x] delete
+    * [x] safe_delete
+* INDEXES
+    * [x] ensure_index
+    * [x] drop_index
 * [ ] count
-* [x] each
+* [x] all
 * [x] cursor
 
 ### Cursor

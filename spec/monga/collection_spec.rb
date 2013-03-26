@@ -116,6 +116,29 @@ describe Monga::Collection do
     end
   end
 
+  describe "fetch many data" do
+    before do
+      MANY = 1000
+      EM.run do
+        req = COLLECTION.safe_insert(
+          MANY.times.map{ |i| { row: (i+1).to_s } }
+        )
+        req.callback{ EM.stop }
+        req.errback{ |err| raise err }
+      end
+    end
+    it "should fetch em all" do
+      EM.run do
+        req = COLLECTION.find
+        req.callback do |docs|
+          docs.size.must_equal MANY
+          EM.stop
+        end
+        req.errback{ |err| raise err }
+      end
+    end
+  end
+
   describe "insert" do
     it "should single insert" do
       EM.run do
@@ -171,42 +194,43 @@ describe Monga::Collection do
         req.errback{ |err| raise err }
       end
     end
+
+    it "should continue to insert if error happend" do
+
+    end
   end
 
   describe "indexes" do
     it "should create an index" do
       EM.run do
-        COLLECTION.ensure_index({artist: 1})
+        COLLECTION.ensure_index(artist: 1)
         req = COLLECTION.get_indexes
         req.callback do |indexes|
-          indexes.any?{ |ind| ind["key"] == {"artist" => 1}}.must_equal true
+          indexes.any?{ |ind| ind["ns"] == "#{DB.name}.#{COLLECTION.name}" && ind["key"] == {"artist" => 1}}.must_equal true
           EM.stop
         end
         req.errback{ |err| raise err }
       end
     end
-  end
 
-  describe "fetch many data" do
-    before do
-      MANY = 1000
+    it "should drop an index" do
       EM.run do
-        req = COLLECTION.safe_insert(
-          MANY.times.map{ |i| { row: (i+1).to_s } }
-        )
-        req.callback{ EM.stop }
-        req.errback{ |err| raise err }
-      end
-    end
-    it "should fetch em all" do
-      EM.run do
-        req = COLLECTION.find
-        req.callback do |docs|
-          docs.size.must_equal MANY
-          EM.stop
+        COLLECTION.ensure_index(artist: 1)
+        req = COLLECTION.drop_index(artist: 1)
+        req.callback do |resp|
+          req = COLLECTION.get_indexes
+          req.callback do |indexes|
+            indexes.any?{ |ind| ind["ns"] == "#{DB.name}.#{COLLECTION.name}" && ind["key"] == {"artist" => 1}}.must_equal false
+            EM.stop
+          end
+          req.errback{ |err| raise err }
         end
         req.errback{ |err| raise err }
       end
+    end
+
+    it "should create unique index" do
+
     end
   end
 end
