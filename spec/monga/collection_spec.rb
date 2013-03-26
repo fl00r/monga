@@ -187,16 +187,35 @@ describe Monga::Collection do
 
     it "should fail on uniq index" do
       EM.run do
-        req = COLLECTION.safe_insert({book_id: 1, title: "Bible"}, {book_id: 1, title: "Lord of the Ring"})
+        COLLECTION.ensure_index({book_id: 1}, {unique: true})
+        req = COLLECTION.safe_insert([{book_id: 1, title: "Bible"}, {book_id: 1, title: "Lord of the Ring"}, {book_id: 2, title: "War and Piece"}, {book_id: 3, title: "Harry Potter"}])
         req.callback do
-          EM.stop
+          fail "It should never happen"
         end
-        req.errback{ |err| raise err }
+        req.errback do |err|
+          err.class.must_equal Monga::Exceptions::QueryFailure
+          COLLECTION.count.callback do |n|
+            n.must_equal 1
+            EM.stop
+          end
+        end
       end
     end
 
     it "should continue to insert if error happend" do
-
+      EM.run do
+        COLLECTION.ensure_index({book_id: 1}, {unique: true})
+        req = COLLECTION.safe_insert([{book_id: 1, title: "Bible"}, {book_id: 1, title: "Lord of the Ring"}, {book_id: 2, title: "War and Piece"}, {book_id: 3, title: "Harry Potter"}], {continue_on_error: true})
+        req.callback do |res|
+          fail "It should never happen"
+        end
+        req.errback do |err|
+          COLLECTION.count.callback do |n|
+            n.must_equal 3
+            EM.stop
+          end
+        end
+      end
     end
   end
 
@@ -230,7 +249,15 @@ describe Monga::Collection do
     end
 
     it "should create unique index" do
-
+      EM.run do
+        COLLECTION.ensure_index({artist: 1}, {unique: 1})
+        req = COLLECTION.get_indexes
+        req.callback do |indexes|
+          indexes.any?{ |ind| ind["ns"] == "#{DB.name}.#{COLLECTION.name}" && ind["key"] == {"artist" => 1} && ind["unique"] == true}.must_equal true
+          EM.stop
+        end
+        req.errback{ |err| raise err }
+      end
     end
   end
 end

@@ -37,7 +37,7 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
     * [x] insert (single)
     * [x] insert (batch)
     * [x] continue_on_error
-    * [x] safe_insert 
+    * [x] safe_insert
 * UPDATE_OP
     * [ ] update
     * [ ] safe_update
@@ -47,7 +47,7 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 * INDEXES
     * [x] ensure_index
     * [x] drop_index
-* [ ] count
+* [x] count
 * [x] all
 * [x] cursor
 
@@ -57,6 +57,8 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 * [x] batch_size
 * [x] get_more
 * [x] next_document
+* [x] next_batch
+* [x] each_doc
 * [ ] Flags
     * [ ] tailable_cursor
     * [ ] slave_ok

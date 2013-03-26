@@ -38,13 +38,13 @@ module Monga
 
     def count(collection_name)
       Monga::Response.surround do |resp|
-        req = cmd(count: collection_name)
-        req.callback do |res|
-          resp.succeed(res["n"].to_i)
+        req = with_response do
+          cmd(count: collection_name).limit(1)
         end
-        req.errback do |err|
-          resp.fail(err)
+        req.callback do |data|
+          resp.succeed data.first["n"].to_i
         end
+        req.errback{ |err| resp.fail err }
       end
     end
 
@@ -71,7 +71,7 @@ module Monga
 
     def with_response
       Monga::Response.surround do |resp|
-        req = yield
+        req = yield(resp)
         req.callback do |data|
           if data.any?
             resp.succeed(data)
