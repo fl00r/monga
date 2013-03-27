@@ -42,7 +42,7 @@ module Monga
       options = {}
       options[:query] = query
       options[:update] = update
-      options[:flags] = flags
+      options.merge!(flags)
       Monga::Requests::Update.new(@db, @name, options).perform
     end
 
@@ -63,7 +63,7 @@ module Monga
       doc[:ns] = "#{db.name}.#{name}"
       Monga::Requests::Insert.new(@db, "system.indexes", {documents: doc}).perform
     end
-    
+
     def drop_index(indexes)
       @db.drop_indexes(@name, indexes)
     end
@@ -85,7 +85,7 @@ module Monga
     end
 
     # Safe methods
-    [:update, :insert, :delete].each do |meth|
+    [:update, :insert, :delete, :remove, :ensure_index].each do |meth|
       class_eval <<-EOS
         def safe_#{meth}(*args)
           safe do

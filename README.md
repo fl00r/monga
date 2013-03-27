@@ -36,17 +36,23 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 * INSERT_OP
     * [x] insert (single)
     * [x] insert (batch)
-    * [x] continue_on_error
     * [x] safe_insert
+    * FLAGS
+        * [x] continue_on_error
 * UPDATE_OP
-    * [ ] update
-    * [ ] safe_update
+    * [x] update
+    * [x] safe_update
+    * FLAGS
+        * [x] upsert
+        * [x] multi_update
 * DELETE_OP
     * [x] delete
     * [x] safe_delete
 * INDEXES
     * [x] ensure_index
     * [x] drop_index
+    * [x] drop_indexes
+    * [x] get_indexes
 * [x] count
 * [x] all
 * [x] cursor
@@ -66,3 +72,11 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
     * [ ] await_data
     * [ ] exhaust
     * [ ] partial
+
+# ISSUES handled with
+
+Some commands, such as `db.getLastError`, `db.count` and other `db.commands` requires `numberToReturn` in OP_QUERY to be setted as `-1`. Also this commands should return a response. If nothing returned it should be interpreted as an Exception. Also, in contrast to the other queries it could return `errmsg` which should be interpreted as an Exception too. Other query methods could return `err` response.
+
+To create index you can't call any `db.ensureIndex` command but you should insert a document into `sytem.indexes` collection manually. But to drop index you should call specific `db.dropIndexes` command.
+
+`multi_update` flag works only with `$` commands (i.e. `$set: { title: "blahblah" }`)

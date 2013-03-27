@@ -11,7 +11,6 @@ module Monga::Requests
         documents = @options[:documents]
 
         b = BSON::ByteBuffer.new
-        p ["FLAGS", flags]
         b.put_int(flags)
         BSON::BSON_RUBY.serialize_cstr(b, full_name)
         case documents

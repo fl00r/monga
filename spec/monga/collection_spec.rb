@@ -259,5 +259,85 @@ describe Monga::Collection do
         req.errback{ |err| raise err }
       end
     end
+
+    # Why somebody needs to do safe_ensure_index?
+    it "should not fail on safe_ensure_index" do
+      EM.run do
+        req = COLLECTION.safe_ensure_index({artist: 1}, {unique: 1})
+        req.callback do |res|
+          req.callback{ |res| EM.stop }
+          req.errback{ |err| raise err }
+        end
+        req.errback{ |err| raise err }
+      end
+    end
+  end
+
+  describe "update" do
+    before do
+      EM.run do
+        COLLECTION.safe_insert([
+          { artist: "Madonna", title: "Burning Up", status: "Out of Order" },
+          { artist: "Madonna", title: "Freezing", status: "Out of Order" }
+        ]).callback{ EM.stop }
+      end
+    end
+
+    it "should update exist item (first matching)" do
+      EM.run do
+        req = COLLECTION.safe_update({artist: "Madonna"}, {status: "Available"})
+        req.callback do |res|
+          COLLECTION.find.callback do |docs|
+            docs.map{|d| d["status"]}.must_equal(["Available", "Out of Order"])
+            EM.stop
+          end
+        end
+      end
+    end
+
+    it "should update exist item (all matching, multi_update)" do
+      EM.run do
+        req = COLLECTION.safe_update({artist: "Madonna"}, {"$set" => { status: "Available"}}, {multi_update: true})
+        req.callback do |res|
+          COLLECTION.find.callback do |docs|
+            docs.map{|d| d["status"]}.must_equal(["Available", "Available"])
+            EM.stop
+          end
+        end
+        req.errback{ |err| raise err }
+      end
+    end
+
+    it "should do nothing on update non existing item" do
+      EM.run do
+        req = COLLECTION.safe_update({artist: "Madonna2"}, {status: "Available"})
+        req.callback do |res|
+          req = COLLECTION.find(artist: "Madonna2").callback do |docs|
+            docs.size.must_equal 0
+            EM.stop
+          end
+        end
+        req.errback do |err|
+          raise err
+        end
+      end
+    end
+
+    it "should create non existing item (upsert)" do
+      EM.run do
+        req = COLLECTION.safe_update({artist: "Madonna2"}, {"$set" => {status: "Available"}}, {upsert: true})
+        req.callback do |res|
+          req = COLLECTION.find(artist: "Madonna2").callback do |docs|
+            docs.size.must_equal 1
+            docs.first["artist"].must_equal("Madonna2")
+            docs.first["status"].must_equal("Available")
+            EM.stop
+          end
+        end
+        req.errback do |err|
+          raise err
+        end
+      end
+    end
   end
 end
