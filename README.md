@@ -6,9 +6,12 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 
 ## To Do List
 
+* [ ] Write a Wiki
+
 ### Connection
 * [x] Connection to single instance
 * [x] Autoreconnect
+* [ ] Connection Pool
 * [ ] Master Slave connection with SlaveOk
 * [ ] Replica Sets Support
 * [ ] Sharding Support
@@ -28,11 +31,22 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 * [x] get_last_error
 * [x] drop_indexes
 * [x] get_indexes
+* Authentication
+    * [ ] login
+    * [ ] logout
+    * [ ] add_user
+* [ ] check maxBsonSize / validate
+* [x] cmd
+* [ ] eval
+* [ ] explain
+* [ ] hint
+* [ ] where
 
 ### Collection
 * QUERY_OP
     * [x] find
     * [x] find_one (first)
+    * [ ] sorting
 * INSERT_OP
     * [x] insert (single)
     * [x] insert (batch)
@@ -56,6 +70,7 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 * [x] count
 * [x] all
 * [x] cursor
+* [ ] DBRef
 
 ### Cursor
 * [x] limit
@@ -77,6 +92,6 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 
 Some commands, such as `db.getLastError`, `db.count` and other `db.commands` requires `numberToReturn` in OP_QUERY to be setted as `-1`. Also this commands should return a response. If nothing returned it should be interpreted as an Exception. Also, in contrast to the other queries it could return `errmsg` which should be interpreted as an Exception too. Other query methods could return `err` response.
 
-To create index you can't call any `db.ensureIndex` command but you should insert a document into `sytem.indexes` collection manually. But to drop index you should call specific `db.dropIndexes` command.
+To create index you can't call any `db.ensureIndex` command but you should insert a document into `sytem.indexes` collection manually. To get list of indexes you should fetch all documents from this collection. But to drop index you should call specific `db.dropIndexes` command.
 
 `multi_update` flag works only with `$` commands (i.e. `$set: { title: "blahblah" }`)

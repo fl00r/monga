@@ -127,6 +127,7 @@ describe Monga::Collection do
         req.errback{ |err| raise err }
       end
     end
+    
     it "should fetch em all and count" do
       EM.run do
         req = COLLECTION.find
