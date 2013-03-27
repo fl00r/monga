@@ -4,6 +4,8 @@
 
 This client is under development. You can try [em-mongo](https://github.com/bcg/em-mongo).
 
+Client supports MongoDB 2.4. Some features won't work in lower versions.
+
 ## To Do List
 
 * [ ] Write a Wiki
@@ -62,6 +64,8 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 * DELETE_OP
     * [x] delete
     * [x] safe_delete
+    * FLAGS
+        * [x] single_remove
 * INDEXES
     * [x] ensure_index
     * [x] drop_index

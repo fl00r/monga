@@ -360,4 +360,38 @@ describe Monga::Collection do
       end
     end
   end
+
+  describe "DELETE OP" do
+    before do
+      EM.run do
+        COLLECTION.safe_insert([
+          { artist: "Madonna", title: "Burning Up", status: "Out of Order" },
+          { artist: "Madonna", title: "Freezing", status: "Out of Order" }
+        ]).callback{ EM.stop }
+      end
+    end
+
+    it "should delete all docs" do
+      EM.run do
+        COLLECTION.safe_delete(artist: "Madonna").callback do
+          COLLECTION.count.callback do |n|
+            n.must_equal 0
+            EM.stop
+          end
+        end
+      end
+    end
+
+    it "should delete first matching" do
+      EM.run do
+        COLLECTION.safe_delete({artist: "Madonna"}, {single_remove: true}).callback do
+          COLLECTION.find.callback do |docs|
+            docs.size.must_equal 1
+            docs.first["title"].must_equal "Freezing"
+            EM.stop
+          end
+        end
+      end
+    end
+  end
 end
