@@ -302,10 +302,13 @@ describe Monga::Collection do
 
     it "should update exist item (first matching)" do
       EM.run do
-        req = COLLECTION.safe_update({artist: "Madonna"}, {status: "Available"})
+        req = COLLECTION.safe_update({artist: "Madonna"}, {artist: "Madonna", status: "Available"})
         req.callback do |res|
           COLLECTION.find.callback do |docs|
-            docs.map{|d| d["status"]}.must_equal(["Available", "Out of Order"])
+            d = docs.first
+            d.delete("_id")
+            d.must_equal({"artist" => "Madonna", "status" => "Available"})
+            docs.last["status"].must_equal "Out of Order"
             EM.stop
           end
         end
@@ -317,7 +320,7 @@ describe Monga::Collection do
         req = COLLECTION.safe_update({artist: "Madonna"}, {"$set" => { status: "Available"}}, {multi_update: true})
         req.callback do |res|
           COLLECTION.find.callback do |docs|
-            docs.map{|d| d["status"]}.must_equal(["Available", "Available"])
+            docs.map{|d| [d["artist"], d["status"]]}.must_equal([["Madonna", "Available"], ["Madonna", "Available"]])
             EM.stop
           end
         end

@@ -128,7 +128,7 @@ module Monga
     end
 
     def send_command(msg, request_id=nil, &cb)
-      @connection.send_command(msg, request_id, &cb)
+      aquire_connection.send_command(msg, request_id, &cb)
     end
 
     def [](db_name)

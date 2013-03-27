@@ -1,7 +1,7 @@
 module Monga
-  class ConnectionPool
+  class ConnectionPool < Monga::Connection
     attr_reader :connections
-    
+
     def initialize(opts={})
       @connections = []
       pool_size = opts.delete :pool_size
@@ -11,14 +11,6 @@ module Monga
       pool_size.times do
         @connections << Monga::Connection.new(opts)
       end
-    end
-
-    def send_command(msg, request_id=nil, &cb)
-      aquire_connection.send_command(msg, request_id=nil, &cb)
-    end
-
-    def [](db_name)
-      Monga::Database.new(self, db_name)
     end
 
     # Aquires connection with min responses in queue
