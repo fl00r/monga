@@ -127,12 +127,15 @@ describe Monga::Collection do
         req.errback{ |err| raise err }
       end
     end
-    it "should fetch em all" do
+    it "should fetch em all and count" do
       EM.run do
         req = COLLECTION.find
         req.callback do |docs|
           docs.size.must_equal MANY
-          EM.stop
+          COLLECTION.count.callback do |c|
+            c.must_equal MANY
+            EM.stop
+          end
         end
         req.errback{ |err| raise err }
       end
