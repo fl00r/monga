@@ -49,7 +49,7 @@ module Monga
       itrator = cursor.each_doc do |doc|
         docs << doc
       end
-      itrator.callback do
+      itrator.callback do |resp|
         succeed docs
       end
       itrator.errback do |err|

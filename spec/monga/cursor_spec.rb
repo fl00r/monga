@@ -93,7 +93,7 @@ describe Monga::Cursor do
         cursor.each_doc do |doc|
           docs << doc
         end
-        cursor.callback do
+        cursor.callback do |res|
           docs.size.must_equal 7
           docs.all?{ |doc| doc["author"] == "Madonna" }.must_equal true
           EM.stop

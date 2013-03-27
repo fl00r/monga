@@ -1,72 +1,81 @@
 module Monga
   class Cursor < EM::DefaultDeferrable
+    attr_reader :cursor_id
+
+    CURSORS = {}
+    CLOSED_CURSOR = 0
+    # Batch kill cursors marked to be killed each CLOSE_TIMEOUT seconds
+    CLOSE_TIMEOUT = 1
+
     def initialize(db, collection_name, options = {}, flags = {})
+      @keep_alive = true if flags.delete :keep_alive
+
       @db = db
       @collection_name = collection_name
       @options = options
-      @flags = flags
+      @options.merge!(flags)
 
       @fetched_docs = []
       @count = 0
+      @total_count = 0
       @limit = @options[:limit] ||= 0
       @batch_size = @options[:batch_size]
     end
 
-    def each_doc(&blk)
-      req = next_batch
-      req.callback do |docs|
-        if docs
-          docs.each do |doc|
-            blk.call doc
-          end
-          @fetched_docs.clear
-          each_doc(&blk)
-        else
-          succeed
-        end
-      end
-      req.errback do |err|
-        fail err
-      end
-      self
+    def kill
+      # KILL_CURSORS_OP
+      CURSORS.delete @cursor_id
     end
 
-    def get_more
-      if @cursor_id
-        batch_size = if @limit > 0
-          rest = @limit - @count
-          rest < @batch_size ? -rest : @batch_size
+    def self.batch_kill
+      cursors = CURSORS.select{ |k,v| v }
+      if cursors.any?
+        # KILL_CURSORS_OP
+      end
+    end
+
+    # Sometime in future all marked cursors will be killed in batch
+    def mark_to_kill
+      CURSORS[@cursor_id] = true if alive?
+      @cursor_id = 0
+    end
+
+    def get_more(batch_size)
+      Monga::Response.surround do |resp|
+        req = if @cursor_id
+          opts = { cursor_id: @cursor_id, batch_size: batch_size }
+          Monga::Requests::GetMore.new(@db, @collection_name, opts).callback_perform
         else
-          @batch_size
+          Monga::Requests::Query.new(@db, @collection_name, @options).callback_perform
         end
-        opts = { cursor_id: @cursor_id, batch_size: batch_size }
-        Monga::Requests::GetMore.new(@db, @collection_name, opts).callback_perform
-      else
-        Monga::Requests::Query.new(@db, @collection_name, @options).callback_perform
+        req.callback do |data|
+          @cursor_id = data[5]
+          fetched_docs = data.last
+          @total_count += fetched_docs.count
+          mark_to_kill unless cursor_more?
+
+          resp.succeed fetched_docs
+        end
+        req.errback do |err|
+          mark_to_kill
+          resp.fail err
+        end
       end
     end
 
     def next_batch
       Monga::Response.surround do |resp|
-        if @limit > 0 && @count > @limit
-          resp.succeed(nil)
-        elsif @fetched_docs.size > 0
-          to_return = fetch_rest
-          @count += to_return.size
-          resp.succeed(to_return)
-        elsif @cursor_id == 0
-          resp.succeed(nil)
+        if more?
+          batch_size = get_batch_size
+          req = get_more(batch_size)
+          req.callback{ |res| resp.succeed res }
+          req.errback{ |err| resp.fail err }
         else
-          req = get_more
-          req.callback do |data|
-            @cursor_id = data[5]
-            @fetched_docs = data.last
-            to_return = fetch_rest
-            @count += to_return.size
-            resp.succeed(to_return)
-          end
-          req.errback do |err|
-            resp.fail err
+          mark_to_kill
+          if !alive?
+            resp.fail Monga::Exceptions::CursorIsClosed.new("Cursor is already closed. Check `cursor.more?` before calling cursor")
+          elsif satisfied?
+            resp.fail Monga::Exceptions::CursorLimit.new("You've already fetched #{@limit} docs you asked. Check `cursor.more?` before calling cursor")
           end
         end
       end
@@ -74,38 +83,77 @@ module Monga
 
     def next_document
       Monga::Response.surround do |resp|
-        if @limit > 0 && @count >= @limit
-          resp.succeed(nil)
-        elsif doc = @fetched_docs.shift
-          resp.succeed(doc)
-          @count += 1
-        elsif @cursor_id == 0
-          resp.succeed(nil)
+        if doc = @fetched_docs.shift
+          resp.succeed doc
         else
-          req = get_more
-          req.callback do |data|
-            @cursor_id = data[5]
-            @fetched_docs = data.last
-            resp.succeed(@fetched_docs.shift)
-            @count += 1
+          req = next_batch
+          req.callback do |docs|
+            @fetched_docs = docs
+            if doc = @fetched_docs.shift
+              @count =+ 1
+              resp.succeed doc
+            end
           end
-          req.errback do |err|
-            resp.fail err
-          end
+          req.errback{ |err| resp.fail err }
         end
       end
     end
 
-    private
-
-    def fetch_rest
-      size = @fetched_docs.size
-      if @limit > 0 && @count + size > @limit
-        rest = @limit - @count
-        @fetched_docs.take(rest)
+    def each_doc(&blk)
+      if more?
+        req = next_batch
+        req.callback do |batch|
+          batch.each do |doc|
+            @count += 1
+            blk.call(doc)
+          end
+          each_doc(&blk)
+        end
+        req.errback{ |err| fail err }
       else
-        @fetched_docs
+        succeed
+      end
+      self
+    end
+
+    def cursor_more?
+      alive? && !cursor_satisfied?
+    end
+
+    # Cursor is alive and we need more minerals
+    def more?
+      alive? && !satisfied?
+    end
+
+    # If cursor_id is not setted, or if isn't CLOSED_CURSOR - cursor is alive
+    def alive?
+      @cursor_id != CLOSED_CURSOR
+    end
+
+    # If global limit is setted 
+    # we will be satisfied when we will get limit amount of documents.
+    # Otherwise we are not satisfied untill crsor is alive
+    def satisfied?
+      @limit > 0 && @count >= @limit
+    end
+
+    def cursor_satisfied?
+      @limit > 0 && @total_count >= @limit
+    end
+
+    # How many docs should be returned
+    def rest
+      @limit - @count if @limit > 0
+    end
+
+    # Cursor will get exact amount of docs as user passed with `limit` opr
+    def get_batch_size
+      if @limit > 0 && @batch_size
+        rest < @batch_size ? rest : @batch_size
+      else @batch_size
+        @batch_size
       end
     end
+
   end
 end

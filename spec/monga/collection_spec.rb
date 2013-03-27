@@ -129,6 +129,58 @@ describe Monga::Collection do
     end
   end
 
+  describe "tailable cursor" do
+    before do
+      EM.run do
+        CAPPED_COLLECTION = DB["cappedCollection"]
+        req = DB.create_collection("cappedCollection", capped: true, size: 10*1024)
+        req.callback do
+          CAPPED_COLLECTION.safe_insert([
+            {title: "Doc 1"},
+            {title: "Doc 2"},
+            {title: "Doc 3"},
+          ]).callback do
+            EM.stop
+          end
+        end
+        req.errback{ |err| p err;  EM.stop }
+      end
+    end
+
+    after do
+      EM.run do
+        DB.drop_collection("cappedCollection").callback do
+          EM.stop
+        end
+      end
+    end
+
+    # it "should return tailable cursor" do
+    #   EM.run do
+    #     cursor = CAPPED_COLLECTION.find.cursor(tailable_cursor: true)
+    #     puts "lol"
+    #     cursor.each_doc{ "do nothing" }
+    #     cursor.callback do
+    #       req = CAPPED_COLLECTION.safe_insert({ title: "Last One" })
+    #       req.callback do
+    #         cursor.next_document.callback do |doc|
+    #           doc["title"].must_equal "Last One"
+    #           cursor.kill
+    #           req = CAPPED_COLLECTION.safe_insert({ title: "he Very Last One" }).callback do
+    #             cursor.next_document.errback do |err|
+    #               err.class.must_equal Monga::Exceptions::CursorIsClosed
+    #               EM.stop
+    #             end
+    #           end
+    #         end
+    #       end
+    #       req.errback{ |err| p ["err", err]}
+    #     end
+    #     cursor.errback{ |err| p ["err", err ]}
+    #   end
+    # end
+  end
+
   describe "fetch many data" do
     before do
       MANY = 1000
