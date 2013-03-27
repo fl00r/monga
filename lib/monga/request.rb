@@ -17,6 +17,7 @@ module Monga
       @collection_name = collection_name
       @options = options
       @request_id = self.class.request_id
+      @connection = @db.connection.aquire_connection
     end
 
     def command
@@ -34,14 +35,14 @@ module Monga
 
     # Fire and Forget
     def perform
-      @db.connection.send_command(command)
+      @connection.send_command(command)
       @request_id
     end
 
     # Fire and wait
     def callback_perform
       response = Monga::Response.new
-      @db.connection.send_command(command, @request_id) do |resp|
+      @connection.send_command(command, @request_id) do |resp|
         if Exception === resp
           response.fail(resp)
         else

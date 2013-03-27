@@ -24,6 +24,9 @@ module Monga
       end
     end
 
+    # Be carefull with using get_last_error with connection pool.
+    # In most cases you need to use #safe methods 
+    # and don't access to #get_last_error directky
     def get_last_error
       with_response do
         cmd(getLastError: 1).limit(1)

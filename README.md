@@ -11,7 +11,7 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 ### Connection
 * [x] Connection to single instance
 * [x] Autoreconnect
-* [ ] Connection Pool
+* [x] Connection Pool
 * [ ] Master Slave connection with SlaveOk
 * [ ] Replica Sets Support
 * [ ] Sharding Support

@@ -3,7 +3,7 @@ module Monga
   DEFAULT_PORT = 27017
   HEADER_SIZE  = 16
   
-  class Connection < EM::Connection
+  class EMConnection < EM::Connection
     include EM::Deferrable
 
     class Buffer
@@ -38,20 +38,18 @@ module Monga
       end
     end
 
+    attr_reader :responses
+
     def initialize(opts = {})
       @host = opts[:host]
       @port = opts[:port]
-      @responses = {}
       @reactor_running = true
-    end
-
-    def [](db_name)
-      Monga::Database.new(self, db_name)
+      @responses = {}
     end
 
     def self.connect(opts = {})
-      host = opts[:host] || DEFAULT_HOST
-      port = opts[:port] || DEFAULT_PORT
+      host = opts[:host] ||= DEFAULT_HOST
+      port = opts[:port] ||= DEFAULT_PORT
 
       EM.connect(host, port, self, opts)
     end
@@ -121,6 +119,28 @@ module Monga
     def close
       Monga.logger.debug("EventMachine is stopped, closing connection")
       @reactor_running = false
+    end
+  end
+
+  class Connection
+    def initialize(opts={})
+      @connection = EMConnection.connect(opts)
+    end
+
+    def send_command(msg, request_id=nil, &cb)
+      @connection.send_command(msg, request_id, &cb)
+    end
+
+    def [](db_name)
+      Monga::Database.new(self, db_name)
+    end
+
+    def aquire_connection
+      @connection
+    end
+
+    def responses
+      @connection.responses
     end
   end
 end
