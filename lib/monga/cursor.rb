@@ -52,8 +52,8 @@ module Monga
           resp.succeed(nil)
         elsif @fetched_docs.size > 0
           to_return = fetch_rest
-          resp.succeed(to_return)
           @count += to_return.size
+          resp.succeed(to_return)
         elsif @cursor_id == 0
           resp.succeed(nil)
         else
@@ -62,8 +62,8 @@ module Monga
             @cursor_id = data[5]
             @fetched_docs = data.last
             to_return = fetch_rest
-            resp.succeed(to_return)
             @count += to_return.size
+            resp.succeed(to_return)
           end
           req.errback do |err|
             resp.fail err
