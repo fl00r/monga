@@ -18,6 +18,12 @@ module Monga
       Monga::Miner.new(self, "$cmd", options)
     end
 
+    def eval(js)
+      with_response do
+        cmd(eval: js).limit(1)
+      end
+    end
+
     def get_last_error
       with_response do
         cmd(getLastError: 1).limit(1)
@@ -57,9 +63,9 @@ module Monga
     # Just helper
     def list_collections
       Monga::Response.surround do |resp|
-        req = cmd(eval: "db.getCollectionNames()")
+        req = eval("db.getCollectionNames()")
         req.callback do |res|
-          resp.succeed(res["retval"])
+          resp.succeed(res.first["retval"])
         end
         req.errback do |err|
           resp.fail(err)

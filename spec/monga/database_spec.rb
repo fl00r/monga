@@ -1,7 +1,16 @@
 require 'spec_helper'
 
 describe Monga::Database do
+  before do
+    EM.run do
+      req = DB.drop_collection("myCollection")
+      req.callback{ EM.stop }
+      req.errback{ EM.stop }
+    end
+  end
+
   describe "create/drop" do
+
     it "should create and then drop collection" do
       EM.run do
         req = DB.create_collection("myCollection")
@@ -46,10 +55,12 @@ describe Monga::Database do
                 res.must_equal 1
                 req = DB.drop_collection("myCollection")
                 req.callback{ EM.stop }
+                req.errback{ |err| raise err }
               end
             end
           end
         end
+        req.errback{ |err| raise err }
       end
     end
   end
