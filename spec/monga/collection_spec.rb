@@ -70,10 +70,23 @@ describe Monga::Collection do
 
     it "should find with batch_size" do
       EM.run do
-        req = COLLECTION.find.batch_size(2)
-        req.callback do |data|
-          data.size.must_equal 8
-          data.first.tap{|d| d.delete "_id" }.must_equal({ "author" => "Madonna", "title" => "Burning Up" })
+        cursor = COLLECTION.find.batch_size(2).cursor
+        req = cursor.next_batch
+        req.callback do |batch|
+          batch.size.must_equal 2
+          batch.first.tap{|d| d.delete "_id" }.must_equal({ "author" => "Madonna", "title" => "Burning Up" })
+          EM.stop
+        end
+        req.errback{ |err| raise err }
+      end
+    end
+
+    it "should return next document" do
+      EM.run do
+        cursor = COLLECTION.find.batch_size(2).cursor
+        req = cursor.next_document
+        req.callback do |doc|
+          doc.tap{|d| d.delete "_id" }.must_equal({ "author" => "Madonna", "title" => "Burning Up" })
           EM.stop
         end
         req.errback{ |err| raise err }
@@ -127,7 +140,7 @@ describe Monga::Collection do
         req.errback{ |err| raise err }
       end
     end
-    
+
     it "should fetch em all and count" do
       EM.run do
         req = COLLECTION.find

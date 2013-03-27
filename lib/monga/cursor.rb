@@ -50,14 +50,10 @@ module Monga
       Monga::Response.surround do |resp|
         if @limit > 0 && @count > @limit
           resp.succeed(nil)
-        elsif (size = @fetched_docs.size) > 0
-          if @limit > 0 && @count + size > @limit
-            size = @limit - @count
-            resp.succeed(@fetched_docs.take(size))
-          else
-            resp.succeed(@fetched_docs)
-          end
-          @count += size
+        elsif @fetched_docs.size > 0
+          to_return = fetch_rest
+          resp.succeed(to_return)
+          @count += to_return.size
         elsif @cursor_id == 0
           resp.succeed(nil)
         else
@@ -65,14 +61,9 @@ module Monga
           req.callback do |data|
             @cursor_id = data[5]
             @fetched_docs = data.last
-            size = @fetched_docs.size
-            if @limit > 0 && @count + size > @limit
-              size = @limit - @count
-              resp.succeed(@fetched_docs.take(size))
-            else
-              resp.succeed(@fetched_docs)
-            end
-            @count += size
+            to_return = fetch_rest
+            resp.succeed(to_return)
+            @count += to_return.size
           end
           req.errback do |err|
             resp.fail err
@@ -102,6 +93,18 @@ module Monga
             resp.fail err
           end
         end
+      end
+    end
+
+    private
+
+    def fetch_rest
+      size = @fetched_docs.size
+      if @limit > 0 && @count + size > @limit
+        rest = @limit - @count
+        @fetched_docs.take(rest)
+      else
+        @fetched_docs
       end
     end
   end
