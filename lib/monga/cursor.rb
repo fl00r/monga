@@ -22,15 +22,52 @@ module Monga
       @batch_size = @options[:batch_size]
     end
 
+    def next_document
+      Monga::Response.surround do |resp|
+        if doc = @fetched_docs.shift
+          resp.succeed doc
+        else
+          req = next_batch
+          req.callback do |docs|
+            @fetched_docs = docs
+            if doc = @fetched_docs.shift
+              @count =+ 1
+              resp.succeed doc
+            end
+          end
+          req.errback{ |err| resp.fail err }
+        end
+      end
+    end
+
+    def each_doc(&blk)
+      if more?
+        req = next_batch
+        req.callback do |batch|
+          batch.each do |doc|
+            @count += 1
+            blk.call(doc)
+          end
+          each_doc(&blk)
+        end
+        req.errback{ |err| fail err }
+      else
+        succeed
+      end
+      self
+    end
+
     def kill
-      # KILL_CURSORS_OP
+      return unless @cursor_id > 0
+      kill_cursors(@cursor_id)
       CURSORS.delete @cursor_id
+      @cursor_id = 0
     end
 
     def self.batch_kill
       cursors = CURSORS.select{ |k,v| v }
       if cursors.any?
-        # KILL_CURSORS_OP
+        kill_cursors(cursors)
       end
     end
 
@@ -39,6 +76,13 @@ module Monga
       CURSORS[@cursor_id] = true if alive?
       @cursor_id = 0
     end
+
+    # Cursor is alive and we need more minerals
+    def more?
+      alive? && !satisfied?
+    end
+
+    private
 
     def get_more(batch_size)
       Monga::Response.surround do |resp|
@@ -81,48 +125,8 @@ module Monga
       end
     end
 
-    def next_document
-      Monga::Response.surround do |resp|
-        if doc = @fetched_docs.shift
-          resp.succeed doc
-        else
-          req = next_batch
-          req.callback do |docs|
-            @fetched_docs = docs
-            if doc = @fetched_docs.shift
-              @count =+ 1
-              resp.succeed doc
-            end
-          end
-          req.errback{ |err| resp.fail err }
-        end
-      end
-    end
-
-    def each_doc(&blk)
-      if more?
-        req = next_batch
-        req.callback do |batch|
-          batch.each do |doc|
-            @count += 1
-            blk.call(doc)
-          end
-          each_doc(&blk)
-        end
-        req.errback{ |err| fail err }
-      else
-        succeed
-      end
-      self
-    end
-
     def cursor_more?
       alive? && !cursor_satisfied?
-    end
-
-    # Cursor is alive and we need more minerals
-    def more?
-      alive? && !satisfied?
     end
 
     # If cursor_id is not setted, or if isn't CLOSED_CURSOR - cursor is alive
@@ -153,6 +157,10 @@ module Monga
       else @batch_size
         @batch_size
       end
+    end
+
+    def kill_cursors(cursor_ids)
+      Monga::Requests::KillCursors.new(@db, @collection_name, cursor_ids: [*cursor_ids]).perform
     end
 
   end

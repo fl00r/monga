@@ -9,6 +9,7 @@ Client supports MongoDB 2.4. Some features won't work in lower versions.
 ## To Do List
 
 * [ ] Write a Wiki
+* [ ] Write comments
 
 ### Connection
 * [x] Connection to single instance
@@ -21,7 +22,7 @@ Client supports MongoDB 2.4. Some features won't work in lower versions.
 ### Protocol
 * [x] OP_QUERY
 * [x] OP_GET_MORE
-* [ ] OP_KILL_CURSORS
+* [x] OP_KILL_CURSORS
 * [x] OP_INSERT
 * [x] OP_UPDATE
 * [x] OP_DELETE
@@ -84,13 +85,16 @@ Client supports MongoDB 2.4. Some features won't work in lower versions.
 * [x] next_document
 * [x] next_batch
 * [x] each_doc
+* [x] kill
+* [x] mark_to_kill
+* [ ] batch_kill
 * [ ] Flags
-    * [ ] tailable_cursor
-    * [ ] slave_ok
-    * [ ] no_cursor_timeout
-    * [ ] await_data
-    * [ ] exhaust
-    * [ ] partial
+    * [x] tailable_cursor
+    * [x] slave_ok
+    * [x] no_cursor_timeout
+    * [x] await_data
+    * [x] exhaust
+    * [x] partial
 
 # ISSUES handled with
 

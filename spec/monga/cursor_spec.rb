@@ -133,5 +133,30 @@ describe Monga::Cursor do
         cursor.errback{ |err| raise err }
       end
     end
+
+    it "should kill cursor" do
+      EM.run do
+        cursor = Monga::Cursor.new(DB, COLLECTION.name, { query: { author: "Madonna" }, batch_size: 2, limit: 15 })
+        cursor.next_document.callback do |doc|
+          cursor.next_document.callback do |doc|
+            DB.cmd(cursorInfo: 1).callback do |resp|
+              resp.first["totalOpen"].must_equal 1
+              cursor.kill
+              DB.cmd(cursorInfo: 1).callback do |resp|
+                resp.first["totalOpen"].must_equal 0
+                req = cursor.next_document
+                req.callback do |resp|
+                  fail "never called"
+                end
+                req.errback do |err|
+                  err.class.must_equal Monga::Exceptions::CursorIsClosed
+                  EM.stop
+                end
+              end
+            end
+          end
+        end
+      end
+    end
   end
 end

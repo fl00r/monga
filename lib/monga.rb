@@ -16,6 +16,7 @@ require File.expand_path("../monga/requests/insert", __FILE__)
 require File.expand_path("../monga/requests/delete", __FILE__)
 require File.expand_path("../monga/requests/update", __FILE__)
 require File.expand_path("../monga/requests/get_more", __FILE__)
+require File.expand_path("../monga/requests/kill_cursors", __FILE__)
 
 module Monga
   extend self

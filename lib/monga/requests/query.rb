@@ -18,6 +18,7 @@ module Monga::Requests
         query = @options[:query] || {}
         fields = @options[:fields] || {}
 
+
         b = BSON::ByteBuffer.new
         b.put_int(flags)
         BSON::BSON_RUBY.serialize_cstr(b, full_name)

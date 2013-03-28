@@ -1,15 +1,15 @@
 module Monga
   class Request
     OP_CODES = {
-      reply:          1,
-      msg:         1000,
-      update:      2001,
-      insert:      2002,
-      reserved:    2003,
-      query:       2004,
-      get_more:    2005,
-      delete:      2006,
-      kill_cursor: 2007,
+      reply:           1,
+      msg:          1000,
+      update:       2001,
+      insert:       2002,
+      reserved:     2003,
+      query:        2004,
+      get_more:     2005,
+      delete:       2006,
+      kill_cursors: 2007,
     }
 
     def initialize(db, collection_name, options = {})

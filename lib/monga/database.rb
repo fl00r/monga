@@ -15,12 +15,12 @@ module Monga
       options = {}
       options[:query] = cmd
       options.merge! opts
-      Monga::Miner.new(self, "$cmd", options)
+      Monga::Miner.new(self, "$cmd", options).limit(1)
     end
 
     def eval(js)
       with_response do
-        cmd(eval: js).limit(1)
+        cmd(eval: js)
       end
     end
 
@@ -29,26 +29,26 @@ module Monga
     # and don't access to #get_last_error directky
     def get_last_error
       with_response do
-        cmd(getLastError: 1).limit(1)
+        cmd(getLastError: 1)
       end
     end
 
     def drop_collection(collection_name)
       with_response do
-        cmd(drop: collection_name).limit(1)
+        cmd(drop: collection_name)
       end
     end
 
     def create_collection(collection_name, opts = {})
       with_response do
-        cmd({create: collection_name}.merge(opts)).limit(1)
+        cmd({create: collection_name}.merge(opts))
       end
     end
 
     def count(collection_name)
       Monga::Response.surround do |resp|
         req = with_response do
-          cmd(count: collection_name).limit(1)
+          cmd(count: collection_name)
         end
         req.callback do |data|
           resp.succeed data.first["n"].to_i
@@ -59,7 +59,7 @@ module Monga
 
     def drop_indexes(collection_name, indexes)
       with_response do
-        cmd(dropIndexes: collection_name, index: indexes).limit(1)
+        cmd(dropIndexes: collection_name, index: indexes)
       end
     end
 
