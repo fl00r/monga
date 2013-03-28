@@ -7,6 +7,10 @@ module Monga
     # Batch kill cursors marked to be killed each CLOSE_TIMEOUT seconds
     CLOSE_TIMEOUT = 1
 
+    EM.schedule do
+      EM.add_periodic_timer(CLOSE_TIMEOUT){ batch_kill }
+    end
+
     def initialize(db, collection_name, options = {}, flags = {})
       @keep_alive = true if flags.delete :keep_alive
 

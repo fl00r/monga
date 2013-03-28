@@ -158,5 +158,20 @@ describe Monga::Cursor do
         end
       end
     end
+
+    it "should kill marked cursors" do
+      EM.run do
+        cursor = Monga::Cursor.new(DB, COLLECTION.name, { query: { author: "Madonna" }, batch_size: 2, limit: 15 })
+        cursor.mark_to_kill
+        DB.cmd(cursorInfo: 1).callback do |resp|
+          resp.first["totalOpen"].must_equal 1
+          EM.add_timer(1.5) do
+            DB.cmd(cursorInfo: 1).callback do |resp|
+            resp.first["totalOpen"].must_equal 0
+            EM.stop
+          end
+        end
+      end
+    end
   end
 end
