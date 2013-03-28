@@ -80,9 +80,15 @@ module Monga
         close
       end
 
+
+      unless @reactor_running
+        EM.add_periodic_timer(Monga::Cursor::CLOSE_TIMEOUT){ Monga::Cursor.batch_kill(self) }
+      end
+
       @connected = true
       @pending_for_reconnect = false
       @buffer = Buffer.new
+      @reactor_running = true
 
       succeed
     end

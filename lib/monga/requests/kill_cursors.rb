@@ -1,6 +1,12 @@
 module Monga::Requests
   class KillCursors < Monga::Request
     op_name :kill_cursors
+
+    def initialize(connection, options = {})
+      @options = options
+      @request_id = self.class.request_id
+      @connection = connection
+    end
     
     def body
       @body ||= begin

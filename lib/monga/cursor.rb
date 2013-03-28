@@ -7,10 +7,6 @@ module Monga
     # Batch kill cursors marked to be killed each CLOSE_TIMEOUT seconds
     CLOSE_TIMEOUT = 1
 
-    EM.schedule do
-      EM.add_periodic_timer(CLOSE_TIMEOUT){ batch_kill }
-    end
-
     def initialize(db, collection_name, options = {}, flags = {})
       @keep_alive = true if flags.delete :keep_alive
 
@@ -67,15 +63,18 @@ module Monga
 
     def kill
       return unless @cursor_id > 0
-      kill_cursors(@cursor_id)
+      self.class.kill_cursors(@db.connection, @cursor_id)
       CURSORS.delete @cursor_id
       @cursor_id = 0
     end
 
-    def self.batch_kill
+    def self.batch_kill(conn)
       cursors = CURSORS.select{ |k,v| v }
-      if cursors.any?
-        kill_cursors(cursors)
+      cursor_ids = cursors.keys
+      if cursor_ids.any?
+        Monga.logger.debug("Following cursors are going to be deleted: #{cursor_ids}")
+        kill_cursors(conn, cursor_ids)
+        CURSORS.delete_if{|k,v| cursor_ids.include?(k) }
       end
     end
 
@@ -167,8 +166,8 @@ module Monga
       end
     end
 
-    def kill_cursors(cursor_ids)
-      Monga::Requests::KillCursors.new(@db, @collection_name, cursor_ids: [*cursor_ids]).perform
+    def self.kill_cursors(connection, cursor_ids)
+      Monga::Requests::KillCursors.new(connection, cursor_ids: [*cursor_ids]).perform
     end
 
   end
