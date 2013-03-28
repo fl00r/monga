@@ -137,10 +137,6 @@ module Monga
       aquire_connection.send_command(msg, request_id, &cb)
     end
 
-    def [](db_name)
-      Monga::Database.new(self, db_name)
-    end
-
     def aquire_connection
       @connection
     end

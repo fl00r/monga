@@ -4,6 +4,9 @@ require "logger"
 
 require File.expand_path("../monga/connection", __FILE__)
 require File.expand_path("../monga/connection_pool", __FILE__)
+require File.expand_path("../monga/client", __FILE__)
+require File.expand_path("../monga/replica_set_client", __FILE__)
+require File.expand_path("../monga/master_slave_client", __FILE__)
 require File.expand_path("../monga/database", __FILE__)
 require File.expand_path("../monga/collection", __FILE__)
 require File.expand_path("../monga/miner", __FILE__)

@@ -12,13 +12,17 @@ Client supports MongoDB 2.4. Some features won't work in lower versions.
 * [ ] Write comments
 * [ ] Gramar improvement ;)
 
+### Clients
+* [x] Client (Single instance connection)
+* [ ] ReplicaSetClient
+* [ ] MasterSlaveClient
+* [ ] ReadPref
+* [ ] Sharding Support
+
 ### Connection
 * [x] Connection to single instance
 * [x] Autoreconnect
 * [x] Connection Pool
-* [ ] Master Slave connection with SlaveOk
-* [ ] Replica Sets Support
-* [ ] Sharding Support
 
 ### Protocol
 * [x] OP_QUERY

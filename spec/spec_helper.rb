@@ -8,8 +8,8 @@ require 'minitest/reporters'
 MiniTest::Reporters.use! MiniTest::Reporters::SpecReporter.new
 
 EM.run do
-  CONNECTION = Monga::Connection.new(host: "localhost", port: 27017)
-  DB = CONNECTION["dbTest"]
+  CLIENT = Monga::Client.new(host: "localhost", port: 27017)
+  DB = CLIENT["dbTest"]
   COLLECTION = DB["testCollection"]
   EM.stop
 end
