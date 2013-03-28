@@ -29,7 +29,7 @@ module Monga
 
     def reconnect(host, port)
       @connections.each do |conn|
-        conn.reconnect(host, port)
+        conn.force_reconnect(host, port)
       end
     end
   end
