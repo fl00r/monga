@@ -5,4 +5,5 @@ module Monga::Exceptions
   class CursorLimit < StandardError; end
   class QueryFailure < StandardError; end
   class UndefinedIndexVersion < StandardError; end
+  class NoAvailableServers < StandardError; end
 end

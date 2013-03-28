@@ -11,7 +11,7 @@ module Monga
     }
 
     def initialize(opts={})
-      conn_type = opts.delete(:type) || :default
+      conn_type = opts.delete(:connection_type) || :default
       conn_class = CONNECTION_TYPES[conn_type]
       @connection = conn_class.connect(opts)
     end
@@ -22,6 +22,10 @@ module Monga
 
     def aquire_connection
       @connection
+    end
+
+    def reconnect(host, port)
+      @connection.force_reconnect(host, port)
     end
 
     def responses

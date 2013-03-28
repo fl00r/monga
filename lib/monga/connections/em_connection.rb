@@ -102,6 +102,12 @@ module Monga::Connections
       end
     end
 
+    def force_reconnect(host, port)
+      @connected = false
+      @host = host
+      @port = port
+    end
+
     def connected?
       @connected || false
     end

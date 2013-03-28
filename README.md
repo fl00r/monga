@@ -10,7 +10,7 @@ Client supports MongoDB 2.4. Some features won't work in lower versions.
 
 * [ ] Write a Wiki
 * [ ] Write comments
-* [ ] Gramar improvement ;)
+* [ ] Grammar improvement ;)
 
 ### Clients
 * [x] Client (Single instance connection)
