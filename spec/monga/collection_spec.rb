@@ -71,7 +71,7 @@ describe Monga::Collection do
     it "should find with batch_size" do
       EM.run do
         cursor = COLLECTION.find.batch_size(2).cursor
-        req = cursor.next_batch
+        req = cursor.send(:next_batch)
         req.callback do |batch|
           batch.size.must_equal 2
           batch.first.tap{|d| d.delete "_id" }.must_equal({ "author" => "Madonna", "title" => "Burning Up" })
@@ -155,30 +155,29 @@ describe Monga::Collection do
       end
     end
 
-    # it "should return tailable cursor" do
-    #   EM.run do
-    #     cursor = CAPPED_COLLECTION.find.cursor(tailable_cursor: true)
-    #     puts "lol"
-    #     cursor.each_doc{ "do nothing" }
-    #     cursor.callback do
-    #       req = CAPPED_COLLECTION.safe_insert({ title: "Last One" })
-    #       req.callback do
-    #         cursor.next_document.callback do |doc|
-    #           doc["title"].must_equal "Last One"
-    #           cursor.kill
-    #           req = CAPPED_COLLECTION.safe_insert({ title: "he Very Last One" }).callback do
-    #             cursor.next_document.errback do |err|
-    #               err.class.must_equal Monga::Exceptions::CursorIsClosed
-    #               EM.stop
-    #             end
-    #           end
-    #         end
-    #       end
-    #       req.errback{ |err| p ["err", err]}
-    #     end
-    #     cursor.errback{ |err| p ["err", err ]}
-    #   end
-    # end
+    it "should return tailable cursor" do
+      EM.run do
+        cursor = CAPPED_COLLECTION.find.cursor(tailable_cursor: true)
+        cursor.each_doc{ p "do nothing" }
+        cursor.callback do
+          req = CAPPED_COLLECTION.safe_insert({ title: "Last One" })
+          req.callback do
+            cursor.next_document.callback do |doc|
+              doc["title"].must_equal "Last One"
+              cursor.kill
+              CAPPED_COLLECTION.safe_insert({ title: "The Very Last One" }).callback do
+                cursor.next_document.errback do |err|
+                  err.class.must_equal Monga::Exceptions::CursorIsClosed
+                  EM.stop
+                end
+              end
+            end
+          end
+          req.errback{ |err| p ["err", err]}
+        end
+        cursor.errback{ |err| p ["err", err ]}
+      end
+    end
   end
 
   describe "fetch many data" do

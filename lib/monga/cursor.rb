@@ -44,11 +44,15 @@ module Monga
       if more?
         req = next_batch
         req.callback do |batch|
-          batch.each do |doc|
-            @count += 1
-            blk.call(doc)
+          if batch.any?
+            batch.each do |doc|
+              @count += 1
+              blk.call(doc)
+            end
+            each_doc(&blk)
+          else
+            succeed
           end
-          each_doc(&blk)
         end
         req.errback{ |err| fail err }
       else
