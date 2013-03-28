@@ -20,7 +20,7 @@ Client supports MongoDB 2.4. Some features won't work in lower versions.
 * [ ] Sharding Support
 
 ### Connection
-* [x] Connection to single instance
+* [x] Connection
 * [x] Autoreconnect
 * [x] Connection Pool
 

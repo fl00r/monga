@@ -1,5 +1,6 @@
 module Monga
   class Request
+
     OP_CODES = {
       reply:           1,
       msg:          1000,
@@ -47,7 +48,8 @@ module Monga
           response.fail(resp)
         else
           flags = resp[4]
-          docs = unpack_docs(resp.last)
+          number = resp[7]
+          docs = unpack_docs(resp.last, number)
           resp[-1] = docs
           if flags & 2**0 > 0
             err = Monga::Exceptions::CursorNotFound.new(docs.first)
@@ -68,13 +70,12 @@ module Monga
 
     private
 
-    def unpack_docs(data)
-      docs = []
-      while !data.empty?
-        size = data.slice(0, 4).unpack("C").first
-        docs << BSON.deserialize(data.slice!(0, size))
+    def unpack_docs(data, number)
+      number.times.map do
+        size = data.slice(0, 4).unpack("L").first
+        d = data.slice!(0, size)
+        BSON.deserialize(d)
       end
-      docs
     end
 
     def flags
@@ -108,3 +109,11 @@ module Monga
     end
   end
 end
+
+
+require File.expand_path("../requests/query", __FILE__)
+require File.expand_path("../requests/insert", __FILE__)
+require File.expand_path("../requests/delete", __FILE__)
+require File.expand_path("../requests/update", __FILE__)
+require File.expand_path("../requests/get_more", __FILE__)
+require File.expand_path("../requests/kill_cursors", __FILE__)
