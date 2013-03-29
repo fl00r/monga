@@ -76,7 +76,6 @@ module Monga::Connections
         close
       end
 
-
       unless @reactor_running
         EM.add_periodic_timer(Monga::Cursor::CLOSE_TIMEOUT){ Monga::Cursor.batch_kill(self) }
       end
@@ -127,6 +126,26 @@ module Monga::Connections
     def close
       Monga.logger.debug("EventMachine is stopped, closing connection")
       @reactor_running = false
+    end
+
+    def master?
+      @primary || false
+    end
+
+    def is_master?(client)
+      db = client["admin"]
+      req = Monga::Requests::Query.new(db, "$cmd", query: {"isMaster" => 1}, limit: 1)
+      command = req.command
+      request_id = req.request_id
+      @responses[request_id] = proc do |data|
+        resp = req.parse_response(data)
+        if Exception === resp
+          @primary = false
+        else
+          @primary = resp.last.first["ismaster"]
+        end
+      end
+      send_data command
     end
   end
 end

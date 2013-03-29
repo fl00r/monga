@@ -4,6 +4,10 @@ require File.expand_path("../connections/secondary", __FILE__)
 
 module Monga
   class Connection
+    extend Forwardable
+
+    def_delegators :@connection, :connected?, :reconnect, :responses, :send_command, :master?, :is_master?
+
     CONNECTION_TYPES = {
       default: Monga::Connections::EMConnection,
       primary: Monga::Connections::Primary,
@@ -14,22 +18,6 @@ module Monga
       conn_type = opts.delete(:connection_type) || :default
       conn_class = CONNECTION_TYPES[conn_type]
       @connection = conn_class.connect(opts)
-    end
-
-    def send_command(msg, request_id=nil, &cb)
-      aquire_connection.send_command(msg, request_id, &cb)
-    end
-
-    def aquire_connection
-      @connection
-    end
-
-    def reconnect(host, port)
-      @connection.force_reconnect(host, port)
-    end
-
-    def responses
-      @connection.responses
     end
   end
 end

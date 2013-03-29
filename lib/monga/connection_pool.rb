@@ -6,16 +6,11 @@ module Monga
       @connections = []
       pool_size = opts.delete :pool_size
 
-      raise ArgumentError, "you should specify pool_size option" unless pool_size
-
       pool_size.times do
         @connections << Monga::Connection.new(opts)
       end
     end
 
-    # Aquires connection with min responses in queue.
-    # If there are a number of equal connections pick random one.
-    # If all connections disconnected take disconnected one.
     def aquire_connection
       connected = @connections.select(&:connected?)
       if connected.any?
@@ -27,10 +22,13 @@ module Monga
       end
     end
 
-    def reconnect(host, port)
-      @connections.each do |conn|
-        conn.force_reconnect(host, port)
-      end
+    def primary?
+      conn = aquire_connection
+      conn ? conn.master? : false
+    end
+
+    def connected?
+      @connections.any?(&:connected?)
     end
   end
 end

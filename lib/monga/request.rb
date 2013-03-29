@@ -1,5 +1,6 @@
 module Monga
   class Request
+    attr_reader :request_id
 
     OP_CODES = {
       reply:           1,
@@ -18,7 +19,7 @@ module Monga
       @collection_name = collection_name
       @options = options
       @request_id = self.class.request_id
-      @connection = @db.connection.aquire_connection
+      @connection = @db.client.aquire_connection
     end
 
     def command
@@ -42,30 +43,32 @@ module Monga
 
     # Fire and wait
     def callback_perform
-      response = Monga::Response.new
-      @connection.send_command(command, @request_id) do |resp|
-        if Exception === resp
-          response.fail(resp)
-        else
-          flags = resp[4]
-          number = resp[7]
-          docs = unpack_docs(resp.last, number)
-          resp[-1] = docs
-          if flags & 2**0 > 0
-            err = Monga::Exceptions::CursorNotFound.new(docs.first)
-            response.fail(err)
-          elsif flags & 2**1 > 0
-            err = Monga::Exceptions::QueryFailure.new(docs.first)
-            response.fail(err)
-          elsif docs.first && (docs.first["err"] || docs.first["errmsg"])
-            err = Monga::Exceptions::QueryFailure.new(docs.first)
-            response.fail(err)
-          else
-            response.succeed(resp)
-          end
+      Monga::Response.surround do |response|
+        @connection.send_command(command, @request_id) do |data|
+          resp = parse_response(data)
+          Exception === resp ? response.fail(resp) : response.succeed(resp)
         end
       end
-      response
+    end
+
+    def parse_response(data)
+      if Exception === data
+        data
+      else
+        flags = data[4]
+        number = data[7]
+        docs = unpack_docs(data.last, number)
+        data[-1] = docs
+        if flags & 2**0 > 0
+          Monga::Exceptions::CursorNotFound.new(docs.first)
+        elsif flags & 2**1 > 0
+          Monga::Exceptions::QueryFailure.new(docs.first)
+        elsif docs.first && (docs.first["err"] || docs.first["errmsg"])
+          Monga::Exceptions::QueryFailure.new(docs.first)
+        else
+          data
+        end
+      end
     end
 
     private

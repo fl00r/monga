@@ -1,10 +1,9 @@
 module Monga
   class Collection
-    attr_reader :connection, :name, :db
+    attr_reader :name, :db
 
     def initialize(db, name)
       @db = db
-      @connection = @db.connection
       @name = name
     end
 

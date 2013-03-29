@@ -1,9 +1,9 @@
 module Monga
   class Database
-    attr_reader :connection, :name
+    attr_reader :client, :name
 
-    def initialize(connection, name)
-      @connection = connection
+    def initialize(client, name)
+      @client = client
       @name = name
     end
 

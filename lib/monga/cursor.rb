@@ -11,6 +11,7 @@ module Monga
       @keep_alive = true if flags.delete :keep_alive
 
       @db = db
+      @connection = @db.client.aquire_connection
       @collection_name = collection_name
       @options = options
       @options.merge!(flags)
@@ -63,7 +64,7 @@ module Monga
 
     def kill
       return unless @cursor_id > 0
-      self.class.kill_cursors(@db.connection, @cursor_id)
+      self.class.kill_cursors(@connection, @cursor_id)
       CURSORS.delete @cursor_id
       @cursor_id = 0
     end
