@@ -1,5 +1,9 @@
 module Monga
   class ConnectionPool < Monga::Connection
+    extend Forwardable
+
+    def_delegators :aquire_connection, :send_command
+
     attr_reader :connections
 
     def initialize(opts={})

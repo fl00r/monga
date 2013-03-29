@@ -11,10 +11,19 @@ describe Monga::ReplicaSetClient do
         { host: "127.0.0.1", port: 29300 },
       ]
       client = Monga::ReplicaSetClient.new(servers: servers)
-      p client.primary
-      EM.add_timer(1){
-        puts client.clients.map(&:primary?)
-      }
+      db = client["dbTest"]
+      collection = db["testCollection"]
+      100.times do
+        collection.insert({row: "test"})
+      end
+      EM.add_timer(0.3) do
+        collection.count.callback do |n|
+          n.must_equal 100
+          collection.safe_delete.callback do
+            EM.stop
+          end
+        end
+      end
     end
   end
 end

@@ -4,6 +4,17 @@
 
 module Monga::Clients
   class ReplicaSetClient
+    class ProxyConnection
+      include EM::Deferrable
+      attr_accessor :server
+
+      def send_command(*args)
+        callback do 
+          server.send_command(*args)
+        end
+      end
+    end
+
     include EM::Deferrable
 
     attr_reader :servers, :clients
@@ -16,26 +27,22 @@ module Monga::Clients
       @clients = @servers.map do |server|
         Monga::Client.new(server.merge(opts))
       end
+
+      @proxy_connection = ProxyConnection.new
     end
 
     def [](db_name)
       Monga::Database.new(self, db_name)
     end
 
-    def send_message(*args)
-      connection = aquire_connecion
-      if connection
-        set_deferred_status :succeeded if @deferred_status != :succeeded
-      else
-        set_deferred_status nil if @deferred_status == :succeeded
-      end
+    def send_command(*args)
       callback do
-        (connection || aquire_connecion).send_message(*args)
+        aquire_connecion.send_command(*args)
       end
     end
 
-    def aquire_connecion
-      case @read_pref
+    def aquire_connection
+      server ||= case @read_pref
       when :primary
         primary
       when :secondary
@@ -49,6 +56,22 @@ module Monga::Clients
       else
         fail "read_pref is undefined"
       end
+
+      
+      if server
+        if @deferred_status != :succeeded
+          set_deferred_status :succeeded 
+          @proxy_connection.server = server
+          @proxy_connection.set_deferred_status :succeeded
+        end
+      else
+        if @deferred_status == :succeeded
+          set_deferred_status nil
+          @proxy_connection.set_deferred_status nil
+        end
+      end
+
+      server || @proxy_connection
     end
 
     def primary
