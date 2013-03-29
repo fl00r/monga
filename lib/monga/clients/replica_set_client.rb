@@ -6,11 +6,13 @@ module Monga::Clients
   class ReplicaSetClient
     class ProxyConnection
       include EM::Deferrable
-      attr_accessor :server
+      def initialize(client)
+        @client = client
+      end
 
       def send_command(*args)
         callback do 
-          server.send_command(*args)
+          @client.aquire_connection.send_command(*args)
         end
       end
     end
@@ -28,17 +30,11 @@ module Monga::Clients
         Monga::Client.new(server.merge(opts))
       end
 
-      @proxy_connection = ProxyConnection.new
+      @proxy_connection = ProxyConnection.new(self)
     end
 
     def [](db_name)
       Monga::Database.new(self, db_name)
-    end
-
-    def send_command(*args)
-      callback do
-        aquire_connecion.send_command(*args)
-      end
     end
 
     def aquire_connection
@@ -57,11 +53,10 @@ module Monga::Clients
         fail "read_pref is undefined"
       end
 
-      
+
       if server
         if @deferred_status != :succeeded
           set_deferred_status :succeeded 
-          @proxy_connection.server = server
           @proxy_connection.set_deferred_status :succeeded
         end
       else

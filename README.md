@@ -14,7 +14,7 @@ Client supports MongoDB 2.4. Some features won't work in lower versions.
 
 ### Clients
 * [x] Client (Single instance connection)
-* [ ] ReplicaSetClient
+* [IN PROCESS] ReplicaSetClient
 * [ ] MasterSlaveClient
 * [ ] ReadPref
 * [ ] Sharding Support
