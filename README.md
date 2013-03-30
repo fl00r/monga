@@ -45,9 +45,7 @@ Client supports MongoDB 2.4. Some features won't work in lower versions.
     * [ ] add_user
 * [ ] check maxBsonSize / validate
 * [x] cmd
-* [ ] eval
-* [ ] explain
-* [ ] hint
+* [x] eval
 * [ ] where
 
 ### Collection
@@ -92,8 +90,10 @@ Client supports MongoDB 2.4. Some features won't work in lower versions.
 * [x] each_doc
 * [x] kill
 * [x] mark_to_kill
-* [ ] batch_kill
-* [ ] Flags
+* [x] batch_kill
+* [x] explain
+* [x] hint
+* Flags
     * [x] tailable_cursor
     * [x] slave_ok
     * [x] no_cursor_timeout

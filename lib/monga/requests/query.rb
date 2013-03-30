@@ -15,9 +15,13 @@ module Monga::Requests
       @body ||= begin
         skip = @options[:skip] || 0
         limit = get_limit
-        query = @options[:query] || {}
         fields = @options[:fields] || {}
 
+        query = {}
+        query["$query"] = @options[:query] || {}
+        query["$hint"] = @options[:hint] if @options[:hint]
+        query["$orderby"] = @options[:sort] if @options[:sort]
+        query["$explain"] = @options[:explain] if @options[:explain]
 
         b = BSON::ByteBuffer.new
         b.put_int(flags)
