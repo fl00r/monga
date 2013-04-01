@@ -81,7 +81,7 @@ module Monga
 
     # Sometime in future all marked cursors will be killed in batch
     def mark_to_kill
-      CURSORS[@cursor_id] = true if alive?
+      CURSORS[@cursor_id] = true if @cursor_id && alive?
       @cursor_id = 0
     end
 

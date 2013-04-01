@@ -34,14 +34,17 @@ describe Monga::ConnectionPool do
   it "should aquire connections correctly when there are waiting responses on each connection" do
     EM.run do
       conns = []
-      @collection.safe_insert(artist: "Madonna")
-      @collection.safe_insert(artist: "Madonna")
-      100.times do
-        conns << @client.aquire_connection
+      @client.connection_pool.connections.each(&:connected?)
+      EM.next_tick do
+        @collection.safe_insert(artist: "Madonna")
+        @collection.safe_insert(artist: "Madonna")
+        100.times do
+          conns << @client.aquire_connection
+        end
+        conns.uniq.size.must_equal 2
+        @client.connection_pool.connections.all?{|c| c.responses.size == 1}.must_equal true
+        EM.stop
       end
-      conns.uniq.size.must_equal 2
-      @client.connection_pool.connections.all?{|c| c.responses.size == 1}.must_equal true
-      EM.stop
     end
   end
 end

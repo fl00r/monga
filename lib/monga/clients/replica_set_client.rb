@@ -10,9 +10,10 @@ module Monga::Clients
         @client = client
       end
 
-      def send_command(*args)
-        callback do 
-          @client.aquire_connection.send_command(*args)
+      def send_command(msg, request_id=nil, &cb)
+        callback do
+          connection = @client.aquire_connection
+          connection.send_command(msg, request_id, &cb)
         end
       end
     end
@@ -71,7 +72,7 @@ module Monga::Clients
 
     def primary
       prim = @clients.detect{ |c| c.primary? && c.connected? }
-      unless prim && @pending_primary
+      unless prim
         find_primary!
       end
       prim
@@ -82,13 +83,17 @@ module Monga::Clients
     end
 
     def find_primary!
-      @pending_primary = true
-      @clients.each{ |c| c.find_primary! }
-      EM.add_timer(0.1) do
-        if primary
-          @pending_primary = false
-        else
-          find_primary!
+      unless @pending_primary
+        @pending_primary = true
+        @clients.each{ |c| c.find_primary! }
+        EM.add_timer(0.1) do
+          if primary
+            aquire_connection
+            @pending_primary = false
+          else
+            @pending_primary = false
+            find_primary!
+          end
         end
       end
     end

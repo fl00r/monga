@@ -51,7 +51,8 @@ module Monga
           cmd(count: collection_name)
         end
         req.callback do |data|
-          resp.succeed data.first["n"].to_i
+          cnt = data.first["n"].to_i
+          resp.succeed cnt
         end
         req.errback{ |err| resp.fail err }
       end
@@ -67,8 +68,8 @@ module Monga
     def list_collections
       Monga::Response.surround do |resp|
         req = eval("db.getCollectionNames()")
-        req.callback do |res|
-          resp.succeed(res.first["retval"])
+        req.callback do |data|
+          resp.succeed(data.first["retval"])
         end
         req.errback do |err|
           resp.fail(err)

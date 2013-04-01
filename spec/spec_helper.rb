@@ -17,4 +17,10 @@ end
 
 INSTANCE = Mongodb::Instance.new(dbpath: "/tmp/mongodb/instance/")
 
+REPL_SET_PORTS = [{ port: 29100 }, { port: 29200 }, { port: 29300 }]
+EM.run do
+  REPL_SET = Mongodb::ReplicaSet.new(REPL_SET_PORTS)
+  EM.stop
+end
+
 # And welcome to callback Hell

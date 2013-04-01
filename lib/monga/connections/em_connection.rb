@@ -57,7 +57,7 @@ module Monga::Connections
         send_data msg
       end
 
-      @responses[request_id] = cb if block_given?
+      @responses[request_id] = cb if cb
     end
 
     def receive_data(data)

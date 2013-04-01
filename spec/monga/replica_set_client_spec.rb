@@ -5,50 +5,24 @@ describe Monga::ReplicaSetClient do
 
   it "should establish simple connection" do
     EM.run do
-      servers = [
-        { host: "127.0.0.1", port: 29100 },
-        { host: "127.0.0.1", port: 29200 },
-        { host: "127.0.0.1", port: 29300 },
-      ]
-      client = Monga::ReplicaSetClient.new(servers: servers)
+      client = Monga::ReplicaSetClient.new(servers: REPL_SET_PORTS)
       db = client["dbTest"]
       collection = db["testCollection"]
-      100.times do
+      1.times do
         collection.insert({row: "test"})
       end
       EM.add_timer(0.3) do
-        collection.count.callback do |n|
-          n.must_equal 100
+        req = collection.count
+        req.callback do |n|
+          # n.must_equal 100
           collection.safe_delete.callback do
             EM.stop
           end
+        end
+        req.errback do |err|
+          raise err
         end
       end
     end
   end
 end
-# mongod --port 29100 --dbpath /tmp/mongodb/rs0-0 --replSet rs1
-# mongod --port 29200 --dbpath /tmp/mongodb/rs0-1 --replSet rs1
-# mongod --port 29300 --dbpath /tmp/mongodb/rs0-2 --replSet rs1
-
-# rsconf = {
-#            _id: "rs1",
-#            members: [
-#                       {
-#                        _id: 0,
-#                        host: "127.0.0.1:29100"
-#                       }
-#                     ]
-#          }
-# rs.initiate( {
-#            _id: "rs1",
-#            members: [
-#                       {
-#                        _id: 0,
-#                        host: "127.0.0.1:29100"
-#                       }
-#                     ]
-#          } )
-# rs.conf()
-# rs.add("127.0.0.1:29200")
-# rs.add("127.0.0.1:29300")
