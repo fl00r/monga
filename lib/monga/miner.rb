@@ -20,6 +20,18 @@ module Monga
       @cursor = Monga::Cursor.new(@db, @collection_name, @options, flags)
     end
 
+    def explain
+      @options[:explain] = true
+    end
+
+    def hint
+      @options[:hint] = true
+    end
+
+    def sort(val)
+      @options[:sort] = val
+    end
+
     def limit(count)
       @options[:limit] = count and self
     end
