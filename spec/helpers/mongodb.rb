@@ -2,23 +2,31 @@ module Mongodb
   MONGOD_PATH = "mongod"
 
   class Instance
-
-    def initialize
-      system "pkill mongod"
-      sleep(0.1)
+    def initialize(opts)
+      @cmd = [MONGOD_PATH]
+      opts.each do |k,v|
+        @cmd << "--#{k}"
+        @cmd << v
+      end
+      shtdwn
       start
     end
 
+    def shtdwn
+      system "#{@cmd * ' '} --shutdown"
+    end
+
     def start
-      p "START"
-      @pid = spawn("mongod")
-      sleep(0.1)
+      return @pid if @pid
+      @pid = spawn(*@cmd, out: "/dev/null")
+      sleep(1)
     end
 
     def stop
-      p "STOP"
+      return unless @pid
       Process.kill("SIGINT", @pid)
-      sleep(0.1)
+      Process.waitpid(@pid)
+      @pid = nil
     end
   end
 end

@@ -89,15 +89,13 @@ module Monga::Connections
     end
 
     def reconnect
-      unless connected?
+      unless @connected && @pending_for_reconnect
         if @reactor_running
           super(@host, @port)
         else
-          unless @pending_for_reconnect
-            EM.schedule{ super(@host, @port) }
-            @pending_for_reconnect = true
-          end
+          EM.schedule{ super(@host, @port) }
         end
+        @pending_for_reconnect = true
       end
     end
 
@@ -108,6 +106,7 @@ module Monga::Connections
     end
 
     def connected?
+      EM.schedule { reconnect } unless @reactor_running
       @connected || false
     end
 
@@ -116,10 +115,11 @@ module Monga::Connections
 
       @responses.each{ |k, cb| cb.call(Monga::Exceptions::LostConnection.new("Mongo has lost connection"))}
       @connected = false
+      @pending_for_reconnect = false
       set_deferred_status(nil)
 
       if @reactor_running
-        EM.add_timer(0.01){ reconnect }
+        EM.next_tick{ reconnect }
       end
     end
 

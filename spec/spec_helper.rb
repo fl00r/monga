@@ -2,6 +2,7 @@ LIB_PATH = File.expand_path('../../lib/monga',  __FILE__)
 
 require LIB_PATH
 require 'helpers/truncate'
+require 'helpers/mongodb'
 require 'minitest/spec'
 require 'minitest/autorun'
 require 'minitest/reporters'
@@ -14,7 +15,6 @@ EM.run do
   EM.stop
 end
 
-MONGODB_START = "sudo service mongodb start"
-MONGODB_STOP = "sudo service mongodb stop"
+INSTANCE = Mongodb::Instance.new(dbpath: "/tmp/mongodb/instance/")
 
 # And welcome to callback Hell

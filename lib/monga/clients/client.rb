@@ -4,7 +4,7 @@ module Monga::Clients
 
     def_delegators :@connection_pool, :aquire_connection, :send_command, :primary?, :connected?
     
-    attr_reader :connection
+    attr_reader :connection_pool
 
     def initialize(opts={})
       opts[:pool_size] ||= 1
