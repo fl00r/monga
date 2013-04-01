@@ -20,6 +20,9 @@ INSTANCE = Mongodb::Instance.new(dbpath: "/tmp/mongodb/instance/")
 REPL_SET_PORTS = [{ port: 29100 }, { port: 29200 }, { port: 29300 }]
 EM.run do
   REPL_SET = Mongodb::ReplicaSet.new(REPL_SET_PORTS)
+  RS_CLIENT = Monga::ReplicaSetClient.new(servers: REPL_SET_PORTS)
+  RS_DB = RS_CLIENT["dbTest"]
+  RS_COLLECTION = RS_DB["testCollection"]
   EM.stop
 end
 

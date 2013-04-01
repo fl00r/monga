@@ -34,7 +34,7 @@ module Monga::Connections
       end
     end
 
-    attr_reader :responses
+    attr_reader :responses, :host, :port
 
     def initialize(opts = {})
       @host = opts[:host]
@@ -51,7 +51,7 @@ module Monga::Connections
     end
 
     def send_command(msg, request_id=nil, &cb)
-      reconnect unless @reactor_running
+      reconnect unless @connected
 
       callback do
         send_data msg
@@ -70,7 +70,7 @@ module Monga::Connections
     end
 
     def connection_completed
-      Monga.logger.debug("Connection is established")
+      Monga.logger.debug("Connection is established #{@host}:#{@port}")
 
       EM.add_shutdown_hook do
         close
@@ -111,15 +111,16 @@ module Monga::Connections
     end
 
     def unbind
-      Monga.logger.debug("Lost connection")
+      Monga.logger.debug("Lost connection #{@host}:#{@port}")
 
       @responses.each{ |k, cb| cb.call(Monga::Exceptions::LostConnection.new("Mongo has lost connection"))}
       @connected = false
+      @primary = false
       @pending_for_reconnect = false
       set_deferred_status(nil)
 
       if @reactor_running
-        EM.next_tick{ reconnect }
+        EM.add_timer(0.1){ reconnect }
       end
     end
 

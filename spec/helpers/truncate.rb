@@ -2,13 +2,13 @@ module Helpers
   module Truncate
     def teardown
       EM.run do
-        req = COLLECTION.safe_delete
-        req.callback do |res|
-          req = COLLECTION.drop_indexes
-          req.callback{ EM.stop }
-          req.errback{ |err| raise err }
+        RS_COLLECTION.safe_delete.callback do
+          RS_COLLECTION.drop_indexes.callback do
+            COLLECTION.safe_delete.callback do |res|
+              COLLECTION.drop_indexes.callback{ EM.stop }
+            end
+          end
         end
-        req.errback{ |err| raise err }
       end
     end
   end

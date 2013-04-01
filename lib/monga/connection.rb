@@ -6,7 +6,7 @@ module Monga
   class Connection
     extend Forwardable
 
-    def_delegators :@connection, :connected?, :reconnect, :responses, :send_command, :master?, :is_master?
+    def_delegators :@connection, :connected?, :reconnect, :responses, :send_command, :master?, :is_master?, :host, :port
 
     CONNECTION_TYPES = {
       default: Monga::Connections::EMConnection,

@@ -49,11 +49,11 @@ module Mongodb
         o = opts.merge({ port: prt[:port], dbpath: dbpath })
         @instances[prt[:port]] = Instance.new(o)
       end
-      @client = Monga::ReplicaSetClient.new(servers: REPL_SET_PORTS)
     end
 
     def primary
-      @client.primary
+      pr = RS_CLIENT.primary
+      @instances[pr.aquire_connection.port] if pr
     end
   end
 end
