@@ -22,7 +22,7 @@ module Monga::Connections
           if size > Monga::HEADER_SIZE
             msg_length = @buffer[0, 4].unpack("L").first
             if msg_length && size >= msg_length
-              data = @buffer.slice!(0, size)
+              data = @buffer.slice!(0, msg_length)
               yield data.unpack("LLLLLQLLa*")
             else
               break
