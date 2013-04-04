@@ -6,6 +6,87 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 
 Client supports MongoDB 2.4. Some features won't work in lower versions.
 
+## Introduction
+
+```ruby
+require 'monga'
+
+EM.run do
+    # Simple client
+    client = Monga::Client.new(pool_size: 5)
+
+    # Replica Set Client
+    servers = [
+        { host: "123.123.123.123", port: 27017},
+        { host: "123.123.123.124", port: 27017},
+        { host: "123.123.123.125", port: 27017},
+    ]
+    # replica_set_client = Monga::ReplicaSetClient.new(servers: servers, pool_size: 10, read_pref: :primary_preferred)
+
+    # Get collection
+    db = client["myDb"]
+    collection = db["myCollection"]
+
+    # Queries
+    collection.insert title: "Some document"
+    collection.insert title: "Another document"
+
+    req = collection.find
+    req.callback do |documents|
+        puts "I've got: #{documents.size} docs"
+    end
+
+    # Cursor
+    cursor = collection.find.cursor.each_doc do |doc|
+        puts doc["title"]
+    end
+    cursor.callback do
+        puts "Cursor finished, now we will remove all docs"
+        collection.remove
+    end
+    cursor.errback do
+        puts "Error happend while following cursor"
+    end
+
+    # Tailable cursor on Capped collection
+    req = db.create_collection("cappedColelction", capped: true, size: 1024*10)
+    req.errback{ |err| p err }
+    req.callback do
+        collection = db["cappedColelction"]
+        i = 0
+        cursor = collection.find(artist: "Madonna").batch_size(10).cursor(tailable_cursor: true).each_doc do |track|
+            i += 1
+            puts "We have got new track: #{track['title']}"
+            if i == 2
+                puts "Let's kill cursor right now"
+                cursor.kill
+            end
+        end
+        cursor.callback do
+            puts "Looks like somebody stopped me"
+            collection.drop
+            EM.stop
+        end
+        cursor.errback do |err|
+            puts "Error happened #{err}"
+            collection.drop
+            EM.stop
+        end
+        collection.insert([{artist: "Madonna", title: "Frozen"}, {artist: "Madonna", title: "Burning Up"}])
+    end
+end
+
+```
+
+And also
+
+* collection#ensure_index
+* collection#drop
+* collection#remove
+* collection#update
+
+and so on...
+
 ## To Do List
 
 * [ ] Write a Wiki
