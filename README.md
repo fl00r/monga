@@ -21,7 +21,7 @@ EM.run do
         { host: "123.123.123.124", port: 27017},
         { host: "123.123.123.125", port: 27017},
     ]
-    <!-- # replica_set_client = Monga::ReplicaSetClient.new(servers: servers, pool_size: 10, read_pref: :primary_preferred) -->
+    replica_set_client = Monga::ReplicaSetClient.new(servers: servers, pool_size: 10, read_pref: :primary_preferred)
 
     # Get collection
     db = client["myDb"]
