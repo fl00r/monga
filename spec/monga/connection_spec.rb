@@ -44,7 +44,7 @@ describe Monga::Connection do
         connection = Monga::Client.new( host: "localhost", port: 27017 )
         INSTANCE.stop
         req = connection["dbTest"].get_last_error
-        req.callback{ |r| puts "never executed" }
+        req.callback{ |r| fail "never executed" }
         req.errback do |err| 
           err.class.must_equal Monga::Exceptions::LostConnection
           EM.stop

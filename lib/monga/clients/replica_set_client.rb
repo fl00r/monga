@@ -1,11 +1,8 @@
-# How it works
-# Replica Set tries to establish connections to all passed servers.
-# Till no connection established it queues al queries inside it's
-
 module Monga::Clients
   class ReplicaSetClient
     class ProxyConnection
       include EM::Deferrable
+
       def initialize(client)
         @client = client
       end
@@ -53,7 +50,6 @@ module Monga::Clients
       else
         fail "read_pref is undefined"
       end
-
 
       if server
         if @deferred_status != :succeeded
