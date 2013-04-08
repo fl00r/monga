@@ -91,8 +91,8 @@ EM.synchrony do
     data.each do |doc|
         puts doc
     end
-    data.safe_insert(title: "My Title")
-    row = data.find(title: "My Title")
+    collection.safe_insert(title: "My Title")
+    row = collection.find(title: "My Title")
     puts row.title
     EM.stop
 end
