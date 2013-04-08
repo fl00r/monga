@@ -1,6 +1,6 @@
 # Monga
 
-[MongoDB](http://www.mongodb.org/) Ruby Client on [EventMachine](https://github.com/eventmachine/eventmachine).
+[MongoDB](http://www.mongodb.org/) Ruby Client on [EventMachine](https://github.com/eventmachine/eventmachine). Also it supports synchrony mode ([em-synchrony](https://github.com/igrigorik/em-synchrony)).
 
 This client is under development. You can try [em-mongo](https://github.com/bcg/em-mongo).
 
@@ -75,7 +75,26 @@ EM.run do
         collection.insert([{artist: "Madonna", title: "Frozen"}, {artist: "Madonna", title: "Burning Up"}])
     end
 end
+```
 
+*Synchronouse mode*
+
+
+```ruby
+require 'monga'
+require 'monga/synchrony'
+
+EM.synchrony do
+    client = Monga::Client.new
+    data = client.find
+    data.each do |doc|
+        puts doc
+    end
+    data.safe_insert(title: "My Title")
+    row = data.find(title: "My Title")
+    puts row.title
+    EM.stop
+end
 ```
 
 And also

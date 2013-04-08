@@ -95,14 +95,14 @@ module Monga
     end
 
     def safe
-      response = Monga::Response.new
-      request_id = yield
-      req = @db.get_last_error
-      req.callback do |data|
-        response.succeed(request_id)
+      Monga::Response.surround do |response|
+        request_id = yield
+        req = @db.get_last_error
+        req.callback do |data|
+          response.succeed(request_id)
+        end
+        req.errback{ |err| response.fail(err) }
       end
-      req.errback{ |err| response.fail(err) }
-      response
     end
   end
 end
