@@ -86,7 +86,8 @@ require 'monga/synchrony'
 
 EM.synchrony do
     client = Monga::Client.new
-    data = client.find
+    collection = client["myDb"]["myCollection"]
+    data = collection.find
     data.each do |doc|
         puts doc
     end
