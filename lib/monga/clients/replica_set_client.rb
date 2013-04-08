@@ -1,4 +1,4 @@
-module Monga::Clients
+module Monga
   class ReplicaSetClient
     class ProxyConnection
       include EM::Deferrable
