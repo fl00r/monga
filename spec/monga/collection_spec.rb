@@ -23,7 +23,7 @@ describe Monga::Collection do
 
     it "should find all" do
       EM.run do
-        req = COLLECTION.find
+        req = COLLECTION.find.all
         req.callback do |data|
           data.size.must_equal 8
           data.first.tap{|d| d.delete "_id" }.must_equal({ "author" => "Madonna", "title" => "Burning Up" })
@@ -46,7 +46,7 @@ describe Monga::Collection do
 
     it "should find limit" do
       EM.run do
-        req = COLLECTION.find.limit(2)
+        req = COLLECTION.find.limit(2).all
         req.callback do |data|
           data.size.must_equal 2
           data.first.tap{|d| d.delete "_id" }.must_equal({ "author" => "Madonna", "title" => "Burning Up" })
@@ -58,7 +58,7 @@ describe Monga::Collection do
 
     it "should find skip" do
       EM.run do
-        req = COLLECTION.find.limit(3).skip(2)
+        req = COLLECTION.find.limit(3).skip(2).all
         req.callback do |data|
           data.size.must_equal 3
           data.first.tap{|d| d.delete "_id" }.must_equal({ "author" => "Madonna", "title" => "Untitled Track 1" })
@@ -95,7 +95,7 @@ describe Monga::Collection do
 
     it "should find with skip limit and query" do
       EM.run do
-        req = COLLECTION.find(author: "Madonna").limit(10).skip(2)
+        req = COLLECTION.find(author: "Madonna").limit(10).skip(2).all
         req.callback do |data|
           data.size.must_equal 5
           data.first.tap{|d| d.delete "_id" }.must_equal({ "author" => "Madonna", "title" => "Untitled Track 1" })
@@ -107,7 +107,7 @@ describe Monga::Collection do
 
     it "should return nothing" do
       EM.run do
-        req = COLLECTION.find(author: "Bjork")
+        req = COLLECTION.find(author: "Bjork").all
         req.callback do |data|
           data.size.must_equal 0
           EM.stop
@@ -118,7 +118,7 @@ describe Monga::Collection do
 
     it "should return specific fields" do
       EM.run do
-        req = COLLECTION.find({author: "Madonna"}, { author: 1 })
+        req = COLLECTION.find({author: "Madonna"}, { author: 1 }).all
         req.callback do |data|
           data.size.must_equal 7
           p data.map(&:keys).flatten.uniq.must_equal(["_id", "author"])
@@ -194,7 +194,7 @@ describe Monga::Collection do
 
     it "should fetch em all and count" do
       EM.run do
-        req = COLLECTION.find
+        req = COLLECTION.find.all
         req.callback do |docs|
           docs.size.must_equal MANY
           COLLECTION.count.callback do |c|
@@ -241,7 +241,7 @@ describe Monga::Collection do
       EM.run do
         req = COLLECTION.safe_insert([{todo: "shopping"}, {todo: "walking"}, {todo: "dinner with Scarlett"}])
         req.callback do
-          req = COLLECTION.find
+          req = COLLECTION.find.all
           req.callback do |resp|
             resp.size.must_equal 3
             resp.map{|r| r["todo"]}.must_equal ["shopping", "walking", "dinner with Scarlett"]
@@ -355,7 +355,7 @@ describe Monga::Collection do
       EM.run do
         req = COLLECTION.safe_update({artist: "Madonna"}, {artist: "Madonna", status: "Available"})
         req.callback do |res|
-          COLLECTION.find.callback do |docs|
+          COLLECTION.find.all.callback do |docs|
             d = docs.first
             d.delete("_id")
             d.must_equal({"artist" => "Madonna", "status" => "Available"})
@@ -370,7 +370,7 @@ describe Monga::Collection do
       EM.run do
         req = COLLECTION.safe_update({artist: "Madonna"}, {"$set" => { status: "Available"}}, {multi_update: true})
         req.callback do |res|
-          COLLECTION.find.callback do |docs|
+          COLLECTION.find.all.callback do |docs|
             docs.map{|d| [d["artist"], d["status"]]}.must_equal([["Madonna", "Available"], ["Madonna", "Available"]])
             EM.stop
           end
@@ -383,7 +383,7 @@ describe Monga::Collection do
       EM.run do
         req = COLLECTION.safe_update({artist: "Madonna2"}, {status: "Available"})
         req.callback do |res|
-          req = COLLECTION.find(artist: "Madonna2").callback do |docs|
+          req = COLLECTION.find(artist: "Madonna2").all.callback do |docs|
             docs.size.must_equal 0
             EM.stop
           end
@@ -398,7 +398,7 @@ describe Monga::Collection do
       EM.run do
         req = COLLECTION.safe_update({artist: "Madonna2"}, {"$set" => {status: "Available"}}, {upsert: true})
         req.callback do |res|
-          req = COLLECTION.find(artist: "Madonna2").callback do |docs|
+          req = COLLECTION.find(artist: "Madonna2").all.callback do |docs|
             docs.size.must_equal 1
             docs.first["artist"].must_equal("Madonna2")
             docs.first["status"].must_equal("Available")
@@ -436,7 +436,7 @@ describe Monga::Collection do
     it "should delete first matching" do
       EM.run do
         COLLECTION.safe_delete({artist: "Madonna"}, {single_remove: true}).callback do
-          COLLECTION.find.callback do |docs|
+          COLLECTION.find.all.callback do |docs|
             docs.size.must_equal 1
             docs.first["title"].must_equal "Freezing"
             EM.stop

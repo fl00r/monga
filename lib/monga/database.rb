@@ -15,7 +15,7 @@ module Monga
       options = {}
       options[:query] = cmd
       options.merge! opts
-      Monga::Miner.new(self, "$cmd", options).limit(1)
+      Monga::Miner.new(self, "$cmd", options).limit(1).all
     end
 
     def eval(js)

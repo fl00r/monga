@@ -23,7 +23,7 @@ module Monga
       options.merge! opts
 
       Monga::Response.surround do |resp|
-        req = Monga::Miner.new(db, name, options).limit(1)
+        req = Monga::Miner.new(db, name, options).limit(1).all
         req.callback{ |data| resp.succeed data.first }
         req.errback{ |err| resp.fail err }
       end
@@ -72,7 +72,7 @@ module Monga
     end
 
     def get_indexes
-      Monga::Miner.new(@db, "system.indexes")
+      Monga::Miner.new(@db, "system.indexes").all
     end
 
     def drop

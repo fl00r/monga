@@ -3,10 +3,10 @@ module Monga
     def wait
       fib = Fiber.current
       callback do |res|
-        f.resume(res)
+        fib.resume(res)
       end
       errback do |err|
-        f.resume(err)
+        fib.resume(err)
       end
       res = Fiber.yield
       raise res if Exception === res

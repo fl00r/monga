@@ -83,6 +83,7 @@ end
 ```ruby
 require 'monga'
 require 'monga/synchrony'
+require 'em-synchrony'
 
 EM.synchrony do
     client = Monga::Client.new
@@ -92,7 +93,7 @@ EM.synchrony do
         puts doc
     end
     collection.safe_insert(title: "My Title")
-    row = collection.find(title: "My Title")
+    row = collection.first(title: "My Title")
     puts row.title
     EM.stop
 end
