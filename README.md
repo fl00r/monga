@@ -31,7 +31,7 @@ EM.run do
     collection.insert title: "Some document"
     collection.insert title: "Another document"
 
-    req = collection.find
+    req = collection.find.all
     req.callback do |documents|
         puts "I've got: #{documents.size} docs"
     end
@@ -77,8 +77,8 @@ EM.run do
 end
 ```
 
-*Synchronouse mode*
-
+**Synchronouse mode**
+*under development*
 
 ```ruby
 require 'monga'
@@ -88,7 +88,7 @@ require 'em-synchrony'
 EM.synchrony do
     client = Monga::Client.new
     collection = client["myDb"]["myCollection"]
-    data = collection.find
+    data = collection.find.all
     data.each do |doc|
         puts doc
     end

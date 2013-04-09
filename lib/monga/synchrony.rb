@@ -12,11 +12,5 @@ module Monga
       raise res if Exception === res
       res
     end
-
-    def self.surround
-      resp = new
-      yield(resp)
-      resp.wait
-    end
   end
 end
