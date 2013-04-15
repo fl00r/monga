@@ -94,6 +94,8 @@ module Monga
       EOS
     end
 
+    private
+    
     def safe
       Monga::Response.surround do |response|
         request_id = yield
