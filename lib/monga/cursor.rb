@@ -254,10 +254,10 @@ module Monga
     end
     alias :next_document :next_doc
 
-    def each_doc(&blk)
+    def each_doc
       begin
         doc, more = next_doc
-        blk.call doc
+        yield doc
       end while more
     end
     alias :each_document :each_doc
