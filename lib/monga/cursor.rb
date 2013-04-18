@@ -1,5 +1,5 @@
 module Monga
-  class Cursor < EM::DefaultDeferrable
+  class Cursor
     attr_reader :cursor_id
 
     CURSORS = {}
