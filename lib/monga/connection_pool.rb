@@ -1,20 +1,18 @@
 module Monga
-  class ConnectionPool < Monga::Connection
-    extend Forwardable
-
-    def_delegators :aquire_connection, :send_command
-
+  class ConnectionPool
     attr_reader :connections
-
-    def initialize(opts={})
-      @connections = []
+    
+    def initialize(opts)
       pool_size = opts.delete :pool_size
 
+      @connections = []
       pool_size.times do
         @connections << Monga::Connection.new(opts)
       end
     end
 
+    # Aquires random connection with min waiting responses among connected.
+    # Otherwise return random disconnected one.
     def aquire_connection
       connected = @connections.select(&:connected?)
       if connected.any?
@@ -24,15 +22,6 @@ module Monga
       else
         @connections.sample
       end
-    end
-
-    def primary?
-      conn = aquire_connection
-      conn ? conn.master? : false
-    end
-
-    def connected?
-      @connections.any?(&:connected?)
     end
   end
 end

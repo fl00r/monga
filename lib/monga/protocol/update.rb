@@ -1,4 +1,4 @@
-module Monga::Requests
+module Monga::Protocol
   class Update < Monga::Request
     op_name :update
 

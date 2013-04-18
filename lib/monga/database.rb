@@ -7,30 +7,40 @@ module Monga
       @name = name
     end
 
-    def [](collection_name)
+    def get_collection(collection_name)
       Monga::Collection.new(self, collection_name)
     end
+    alias :[] :get_collection
 
     def cmd(cmd, opts={})
-      run_cmd(cmd, opts)
+      run_cmd(cmd, opts) do |err, resp|
+        if block_given?
+          yield(err, resp)
+        else
+          err ? raise(err) : resp
+        end
+      end
     end
 
-    def eval(js)
-      run_eval(eval: js)
-    end
-
-    # Be carefull with using get_last_error with connection pool.
-    # In most cases you need to use #safe methods 
-    # and don't access to #get_last_error directky
-    def get_last_error
-      with_response do
-        run_cmd(getLastError: 1)
+    def get_last_error(connection)
+      run_cmd({getLastError: 1}, {connection: connection}) do |err, resp|
+        err, resp = check_response(err, resp)
+        if block_given? 
+          yield(err, resp)
+        else
+          err ? raise(err) : resp
+        end
       end
     end
 
     def drop_collection(collection_name)
-      with_response do
-        run_cmd(drop: collection_name)
+      run_cmd(drop: collection_name) do |err, resp|
+        err, resp = check_response(err, resp)
+        if block_given? 
+          yield(err, resp)
+        else
+          err ? raise(err) : resp
+        end
       end
     end
 
@@ -41,15 +51,13 @@ module Monga
     end
 
     def count(collection_name)
-      Monga::Response.surround do |resp|
-        req = with_response do
-          run_cmd(count: collection_name)
+      run_cmd(count: collection_name) do |err, resp|
+        if err
+          block_given? ? yield(err, resp) : raise(err)
+        else
+          cnt = resp["n"].to_i
+          block_given? ? yield(err, cnt) : cnt
         end
-        req.callback do |data|
-          cnt = data.first["n"].to_i
-          resp.succeed cnt
-        end
-        req.errback{ |err| resp.fail err }
       end
     end
 
@@ -75,30 +83,32 @@ module Monga
     private
 
     def run_eval(js)
-      with_response do
-        run_cmd(eval: js)
+      run_cmd(eval: js) do |err, resp|
+        yield(err, resp)
       end
     end
 
-    def run_cmd(cmd, opts={})
+    def run_cmd(cmd, opts = {})
+      connection = opts.delete :connection
+      connection ||= @client.aquire_connection
+
       options = {}
       options[:query] = cmd
       options.merge! opts
-      Monga::Miner.new(self, "$cmd", options).limit(1).all
+
+      Monga::Cursor.new(connection, name, "$cmd", options).first do |err, resp|
+        yield(err, resp)
+      end
     end
 
-    def with_response
-      Monga::Response.surround do |resp|
-        req = yield(resp)
-        req.callback do |data|
-          if data.any?
-            resp.succeed(data)
-          else
-            exception = Monga::Exceptions::QueryFailure.new("Nothing was returned for your query: #{req.options[:query]}")
-            resp.fail(exception)
-          end
-        end
-        req.errback{ |err| resp.fail err }
+    def check_response(err, data)
+      if err
+        [err, data]
+      elsif data.nil? || data.empty?
+        error = Monga::Exceptions::QueryFailure.new("Empty Response is not a valid Response")
+        [error, data]
+      else
+        [nil, data]
       end
     end
   end

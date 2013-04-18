@@ -1,4 +1,4 @@
-module Monga::Requests
+module Monga::Protocol
   class Query < Monga::Request
     op_name :query
 
@@ -15,7 +15,7 @@ module Monga::Requests
       @body ||= begin
         skip = @options[:skip] || 0
         limit = get_limit
-        fields = @options[:fields] || {}
+        selector = @options[:selector] || {}
 
         query = {}
         query["$query"] = @options[:query] || {}
@@ -29,7 +29,7 @@ module Monga::Requests
         b.put_int(skip)
         b.put_int(limit)
         b.append!(BSON::BSON_C.serialize(query).to_s)
-        b.append!(BSON::BSON_C.serialize(fields).to_s) if fields.any?
+        b.append!(BSON::BSON_C.serialize(selector).to_s) if selector.any?
         b
       end
     end

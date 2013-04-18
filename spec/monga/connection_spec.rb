@@ -1,64 +1,18 @@
 require 'spec_helper'
+require 'helpers/synchrony'
 
 describe Monga::Connection do
-  describe "One instance" do
-    it "should try to connect to stopped instance then instance is started and connection became connected" do
-      EM.run do
-        INSTANCE.stop
-        connection = Monga::Client.new( host: "localhost", port: 27017 )
-        EM.next_tick do
-          connection.connected?.must_equal false
-          INSTANCE.start
-          EM.add_timer(0.5) do
-            connection.connected?.must_equal true
-            EM.stop
-          end
-        end
-      end
-    end
-
-    it "should retrieve connection after restarting of EventMacine" do
-      INSTANCE.start
-      connection = nil
-      EM.run do
-        connection = Monga::Client.new( host: "localhost", port: 27017 )
-        EM.next_tick do 
-          connection.connected?.must_equal true
-          EM.stop
-        end
-      end
-      connection.connected?.must_equal false
-      EM.run do
-        # Somebody tries to send data
-        # Driver should automatically reconnect
-        connection["dbTest"].get_last_error
-        EM.add_timer(0.1) do
-          connection.connected?.must_equal true
-          EM.next_tick{ EM.stop }
-        end
-      end
-    end
-
-    it "should receive errback while trying to fetch data from stopped mongo" do
-      EM.run do
-        connection = Monga::Client.new( host: "localhost", port: 27017 )
-        INSTANCE.stop
-        req = connection["dbTest"].get_last_error
-        req.callback{ |r| fail "never executed" }
-        req.errback do |err| 
-          err.class.must_equal Monga::Exceptions::LostConnection
-          EM.stop
-        end
-      end
-      INSTANCE.start
+  it "should establish connection synchronously" do
+    connection = Monga::Connection.new(port: 27017, type: :sync, timeout: 1)
+    EM.next_tick do
+      connection.connected?.must_equal true
     end
   end
 
-  describe "Replica Set connection" do
-    # TODO
-  end
-
-  describe  "Master Slave connection" do
-    # TODO
+  it "should establish connection asyncronously" do
+    connection = Monga::Connection.new(port: 27017, type: :em, timeout: 1)
+    EM.next_tick do
+      connection.connected?.must_equal true
+    end
   end
 end

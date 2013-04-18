@@ -1,4 +1,4 @@
-module Monga::Requests
+module Monga::Protocol
   class Insert < Monga::Request
     op_name :insert
 

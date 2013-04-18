@@ -1,4 +1,4 @@
-module Monga::Requests
+module Monga::Protocol
   class Delete < Monga::Request
     op_name :delete
 

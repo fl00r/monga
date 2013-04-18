@@ -1,4 +1,4 @@
-module Monga::Requests
+module Monga::Protocol
   class GetMore < Monga::Request
     op_name :get_more
     

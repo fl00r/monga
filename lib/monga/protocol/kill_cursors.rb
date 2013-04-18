@@ -1,4 +1,4 @@
-module Monga::Requests
+module Monga::Protocol
   class KillCursors < Monga::Request
     op_name :kill_cursors
 

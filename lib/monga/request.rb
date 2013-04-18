@@ -1,6 +1,6 @@
 module Monga
   class Request
-    attr_reader :request_id
+    attr_reader :request_id, :connection
 
     OP_CODES = {
       reply:           1,
@@ -14,12 +14,13 @@ module Monga
       kill_cursors: 2007,
     }
 
-    def initialize(db, collection_name, options = {})
-      @db = db
+    def initialize(connection, db_name, collection_name, options = {})
+      @connection = connection
+      @db_name = db_name
       @collection_name = collection_name
       @options = options
+
       @request_id = self.class.request_id
-      @connection = @db.client.aquire_connection
     end
 
     def command
@@ -38,22 +39,24 @@ module Monga
     # Fire and Forget
     def perform
       @connection.send_command(command)
-      @request_id
+      self
     end
 
     # Fire and wait
     def callback_perform
-      Monga::Response.surround do |response|
-        @connection.send_command(command, @request_id) do |data|
-          resp = parse_response(data)
-          Exception === resp ? response.fail(resp) : response.succeed(resp)
+      @connection.send_command(command, @request_id) do |data|
+        err, resp = parse_response(data)
+        if block_given?
+          yield(err, resp)
+        else
+          err ? raise(err) : resp
         end
       end
     end
 
     def parse_response(data)
       if Exception === data
-        data
+        [data, nil]
       else
         flags = data[4]
         number = data[7]
@@ -66,7 +69,7 @@ module Monga
         elsif docs.first && (docs.first["err"] || docs.first["errmsg"])
           Monga::Exceptions::QueryFailure.new(docs.first)
         else
-          data
+          [nil, data]
         end
       end
     end
@@ -90,7 +93,7 @@ module Monga
     end
 
     def full_name
-      [@db.name, @collection_name] * "."
+      [@db_name, @collection_name] * "."
     end
 
     def op_code
@@ -98,7 +101,7 @@ module Monga
     end
 
     def command_length
-      HEADER_SIZE + body.size
+      Monga::HEADER_SIZE + body.size
     end
 
     def self.request_id
@@ -114,9 +117,9 @@ module Monga
 end
 
 
-require File.expand_path("../requests/query", __FILE__)
-require File.expand_path("../requests/insert", __FILE__)
-require File.expand_path("../requests/delete", __FILE__)
-require File.expand_path("../requests/update", __FILE__)
-require File.expand_path("../requests/get_more", __FILE__)
-require File.expand_path("../requests/kill_cursors", __FILE__)
+require File.expand_path("../protocol/query", __FILE__)
+require File.expand_path("../protocol/insert", __FILE__)
+require File.expand_path("../protocol/delete", __FILE__)
+require File.expand_path("../protocol/update", __FILE__)
+require File.expand_path("../protocol/get_more", __FILE__)
+require File.expand_path("../protocol/kill_cursors", __FILE__)

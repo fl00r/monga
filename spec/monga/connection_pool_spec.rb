@@ -1,49 +1,12 @@
 require 'spec_helper'
+require 'helpers/synchrony'
 
 describe Monga::ConnectionPool do
-  # include Helpers::Truncate
-  before do
-    INSTANCE.start
-    EM.run do
-      @client = Monga::Client.new(pool_size: 2)
-      @db = @client["dbTest"]
-      @collection = @db["testCollection"]
-      EM.stop
-    end
-  end
-
-  it "should aquire connections correctly" do
-    EM.run do
-      conns = []
-      req = @collection.safe_insert(artist: "Madonna")
-      EM.next_tick do
-        100.times do
-          conns << @client.aquire_connection
-        end
-        conns.uniq.size.must_equal 1
-        req.callback do
-          100.times{ conns << @client.aquire_connection }
-          conns.uniq.size.must_equal 2
-          EM.stop
-        end
-        req.errback{ |err| raise err }
-      end
-    end
-  end
-
-  it "should aquire connections correctly when there are waiting responses on each connection" do
-    EM.run do
-      conns = []
-      @client.connection_pool.connections.each(&:connected?)
-      EM.next_tick do
-        @collection.safe_insert(artist: "Madonna")
-        @collection.safe_insert(artist: "Madonna")
-        100.times do
-          conns << @client.aquire_connection
-        end
-        conns.uniq.size.must_equal 2
-        @client.connection_pool.connections.all?{|c| c.responses.size == 1}.must_equal true
-        EM.stop
+  it "should establish connection synchronously" do
+    connection_pool = Monga::ConnectionPool.new(port: 27017, type: :sync, timeout: 1, pool_size: 10)
+    EM.next_tick do
+      connection_pool.connections.each do |conn|
+        conn.connected?.must_equal true
       end
     end
   end
