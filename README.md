@@ -55,7 +55,6 @@ collection.safe_insert(title: "Test")
 puts "saved"
 docs = collection.find.all
 puts "Docs fetched: #{docs.size}"
-
 ```
 
 README and WIKI is going to be written.
@@ -100,13 +99,14 @@ README and WIKI is going to be written.
 * [ ] check maxBsonSize / validate
 * [x] cmd
 * [x] eval
-* [ ] where
+* [ ] aggregation
+* [ ] gridfs?
 
 ### Collection
 * QUERY_OP
     * [x] find
     * [x] find_one (first)
-    * [ ] sorting
+    * [x] sorting
 * INSERT_OP
     * [x] insert (single)
     * [x] insert (batch)
