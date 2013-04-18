@@ -21,7 +21,13 @@ module Monga
       options[:query] = query
       options[:selector] = selector
       options.merge!(opts)
-      Monga::Cursor.new(connection, db_name, collection_name, options).limit(1)
+      Monga::Cursor.new(connection, db_name, collection_name, options).first do |err, resp|
+        if block_given?
+          yield(err, resp)
+        else
+          err ? raise(err) : resp
+        end
+      end
     end
     alias :first :find_one
 
@@ -50,11 +56,11 @@ module Monga
 
     def ensure_index(keys, opts={})
       doc = {}
-      doc.merge!(opts)
+      doc[:key] = keys
       # Read docs about naming
       doc[:name] ||= keys.to_a.flatten * "_"
-      doc[:key] = keys
-      doc[:ns] = "#{db.name}.#{collection_name}"
+      doc[:ns] = "#{db_name}.#{collection_name}"
+      doc.merge!(opts)
       Monga::Protocol::Insert.new(connection, db_name, "system.indexes", {documents: doc}).perform
     end
 
@@ -79,7 +85,13 @@ module Monga
     end
 
     def get_indexes
-      Monga::Cursor.new(connection, db_name, "system.indexes").all
+      Monga::Cursor.new(connection, db_name, "system.indexes").all do |err, resp|
+        if block_given?
+          yield(err, resp)
+        else
+          err ? raise(err) : resp
+        end
+      end
     end
 
     def drop
@@ -92,8 +104,12 @@ module Monga
       end
     end
 
-    def count
-      @db.count(@collection_name) do |err, res|
+    # You could pass query/limit/skip options
+    #
+    #    count(query: {artist: "Madonna"}, limit: 10, skip: 0)
+    #
+    def count(opts = {})
+      @db.count(@collection_name, opts) do |err, res|
         if block_given?
           yield(err, res)
         else

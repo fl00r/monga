@@ -74,7 +74,7 @@ module Monga::Connections
       end
 
       unless @reactor_running
-        # EM.add_periodic_timer(Monga::Cursor::CLOSE_TIMEOUT){ Monga::Cursor.batch_kill(self) }
+        EM.add_periodic_timer(Monga::Cursor::CLOSE_TIMEOUT){ Monga::Cursor.batch_kill(self) }
       end
 
       @connected = true

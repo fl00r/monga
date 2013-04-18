@@ -55,8 +55,11 @@ module Monga
       end
     end
 
-    def count(collection_name)
-      run_cmd(count: collection_name) do |err, resp|
+    def count(collection_name, opts = {})
+      cmd = {}
+      cmd[:count] = collection_name
+      cmd.merge!(opts)
+      run_cmd(cmd) do |err, resp|
         if err
           block_given? ? yield(err, resp) : raise(err)
         else
@@ -67,8 +70,13 @@ module Monga
     end
 
     def drop_indexes(collection_name, indexes)
-      with_response do
-        run_cmd(dropIndexes: collection_name, index: indexes)
+      run_cmd(dropIndexes: collection_name, index: indexes) do |err, resp|
+        err, resp = check_response(err, resp)
+        if block_given? 
+          yield(err, resp)
+        else
+          err ? raise(err) : resp
+        end
       end
     end
 
