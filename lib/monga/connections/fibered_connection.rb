@@ -25,18 +25,17 @@ module Monga::Connections
 end
 
 # Patching async iteration in sync mode!
-module Monga
-  class Cursor
-    alias_method :orig_each_batch, :each_batch
+# module Monga
+#   class Cursor
+#     alias_method :orig_each_batch, :each_batch
 
-    def each_batch(&blk)
-      begin
-        new_blk = proc{ |err, batch, iter|
-          raise err if err
-          yield batch
-        }
-        orig_each_batch(&new_blk)
-      end while iter
-    end
-  end
-end
+#     def each_batch(&blk)
+#       orig_each_batch do |err, batch, iter|
+#         p [err, batch, iter]
+#         # raise err if err
+#         p batch
+#         yield batch
+#       end
+#     end
+#   end
+# end

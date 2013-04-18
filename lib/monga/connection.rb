@@ -4,6 +4,8 @@ module Monga
 
     def_delegators :@connection, :connected?, :responses, :send_command
 
+    attr_reader :type
+
     CONNECTIONS = {
       em: Monga::Connections::EMConnection,
       sync: Monga::Connections::FiberedConnection,
@@ -21,6 +23,8 @@ module Monga
     # * connection type
     # * timeout
     def initialize(opts)
+      @type = opts[:type]
+
       host, port = if server = opts[:server]
         h, p = server.split(":")
         [h, p.to_i]
@@ -31,7 +35,7 @@ module Monga
       end
       timeout = opts[:timeout]
 
-      conn_type = CONNECTIONS[opts[:type]]
+      conn_type = CONNECTIONS[@type]
       raise Monga::Exceptions::WrongConnectionType, "Connection type `#{opts[:type]}` is non valid, choose one of: :em, :sync, or :block" unless conn_type
       @connection = conn_type.connect(host, port, timeout)
     end

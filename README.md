@@ -1,4 +1,4 @@
-It is now completely rewritten with support all kind of interfaces: blocking (TCP Socket), async (EventMachine), sync (Fibers). So API will be changed from Deferrable to callback (NodeJS style).
+It is now completely rewritten with support of all kind of interfaces: blocking (TCP Socket), async (EventMachine), sync (Fibers). So API will be changed from Deferrable to callback (NodeJS style).
 
 # Monga
 

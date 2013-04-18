@@ -109,7 +109,7 @@ module Monga
       options[:query] = cmd
       options.merge! opts
 
-      Monga::Cursor.new(connection, name, "$cmd", options).first do |err, resp|
+      Monga::Cursor.create(connection, name, "$cmd", options).first do |err, resp|
         yield(err, resp)
       end
     end

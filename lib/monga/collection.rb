@@ -12,7 +12,7 @@ module Monga
       options[:query] = query
       options[:selector] = selector
       options.merge!(opts)
-      Monga::Cursor.new(connection, db_name, collection_name, options)
+      Monga::Cursor.create(connection, db_name, collection_name, options)
     end
     alias :find :query
 
@@ -21,7 +21,7 @@ module Monga
       options[:query] = query
       options[:selector] = selector
       options.merge!(opts)
-      Monga::Cursor.new(connection, db_name, collection_name, options).first do |err, resp|
+      Monga::Cursor.create(connection, db_name, collection_name, options).first do |err, resp|
         if block_given?
           yield(err, resp)
         else
@@ -85,7 +85,7 @@ module Monga
     end
 
     def get_indexes
-      Monga::Cursor.new(connection, db_name, "system.indexes").all do |err, resp|
+      Monga::Cursor.create(connection, db_name, "system.indexes").all do |err, resp|
         if block_given?
           yield(err, resp)
         else
