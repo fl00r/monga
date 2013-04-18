@@ -1,5 +1,3 @@
-It is now completely rewritten with support of all kind of interfaces: blocking (TCP Socket), async (EventMachine), sync (Fibers). So API will be changed from Deferrable to callback (NodeJS style).
-
 # Monga
 
 [MongoDB](http://www.mongodb.org/) Ruby Client on [EventMachine](https://github.com/eventmachine/eventmachine). Also it supports synchrony mode ([em-synchrony](https://github.com/igrigorik/em-synchrony)).
@@ -8,107 +6,59 @@ This client is under development. You can try [em-mongo](https://github.com/bcg/
 
 Client supports MongoDB 2.4. Some features won't work in lower versions.
 
-## Introduction
+# Introduction
+
+Monga supports asynchronous (over EventMachine), synchronous (Fibers) and blocking (TCPSocket) interfaces.
+
+API will be familiar to Node.js developers: it returns `err, response` into callback.
 
 ```ruby
-require 'monga'
-
+# Async mode
 EM.run do
-    # Simple client
-    client = Monga::Client.new(pool_size: 5)
-
-    # Replica Set Client
-    servers = [
-        { host: "123.123.123.123", port: 27017},
-        { host: "123.123.123.124", port: 27017},
-        { host: "123.123.123.125", port: 27017},
-    ]
-    replica_set_client = Monga::ReplicaSetClient.new(servers: servers, pool_size: 10, read_pref: :primary_preferred)
-
-    # Get collection
-    db = client["myDb"]
-    collection = db["myCollection"]
-
-    # Queries
-    collection.insert title: "Some document"
-    collection.insert title: "Another document"
-
-    req = collection.find.all
-    req.callback do |documents|
-        puts "I've got: #{documents.size} docs"
-    end
-
-    # Cursor
-    cursor = collection.find.cursor.each_doc do |doc|
-        puts doc["title"]
-    end
-    cursor.callback do
-        puts "Cursor finished, now we will remove all docs"
-        collection.remove
-    end
-    cursor.errback do
-        puts "Error happend while following cursor"
-    end
-
-    # Tailable cursor on Capped collection
-    req = db.create_collection("cappedColelction", capped: true, size: 1024*10)
-    req.errback{ |err| p err }
-    req.callback do
-        collection = db["cappedColelction"]
-        i = 0
-        cursor = collection.find(artist: "Madonna").batch_size(10).cursor(tailable_cursor: true).each_doc do |track|
-            i += 1
-            puts "We have got new track: #{track['title']}"
-            if i == 2
-                puts "Let's kill cursor right now"
-                cursor.kill
+    connection = Monga::Client.new(host: "127.0.0.1", port: 27017, type: :em)
+    db = connection["dbTest"]
+    collection = db["testCollection"]
+    collection.safe_insert(title: "Test") do |err, resp|
+        if err
+            puts "Error happend: #{err.message}"
+        else
+            puts "saved!"
+            collection.find.all do |err, docs|
+                if err 
+                    puts "Error happend: #{err.message}"
+                else
+                    puts "Docs fetched: #{docs.size}"
+                end
+                EM.stop
             end
         end
-        cursor.callback do
-            puts "Looks like somebody stopped me"
-            collection.drop
-            EM.stop
-        end
-        cursor.errback do |err|
-            puts "Error happened #{err}"
-            collection.drop
-            EM.stop
-        end
-        collection.insert([{artist: "Madonna", title: "Frozen"}, {artist: "Madonna", title: "Burning Up"}])
     end
 end
-```
 
-**Synchronouse mode**
-*under development*
-
-```ruby
-require 'monga'
-require 'monga/synchrony'
-require 'em-synchrony'
-
+# Sync mode
 EM.synchrony do
-    client = Monga::Client.new
-    collection = client["myDb"]["myCollection"]
-    data = collection.find.all
-    data.each do |doc|
-        puts doc
-    end
-    collection.safe_insert(title: "My Title")
-    row = collection.first(title: "My Title")
-    puts row.title
+    connection = Monga::Client.new(host: "127.0.0.1", port: 27017, type: :sync)
+    db = connection["dbTest"]
+    collection = db["testCollection"]
+    collection.safe_insert(title: "Test")
+    puts "saved"
+    docs = collection.find.all
+    puts "Docs fetched: #{docs.size}"
     EM.stop
 end
+
+# Blocking mode
+connection = Monga::Client.new(host: "127.0.0.1", port: 27017, type: :block)
+db = connection["dbTest"]
+collection = db["testCollection"]
+collection.safe_insert(title: "Test")
+puts "saved"
+docs = collection.find.all
+puts "Docs fetched: #{docs.size}"
+
 ```
 
-And also
-
-* collection#ensure_index
-* collection#drop
-* collection#remove
-* collection#update
-
-and so on...
+README and WIKI is going to be written.
 
 ## To Do List
 
