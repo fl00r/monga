@@ -25,6 +25,7 @@ require File.expand_path("../monga/connections/fibered_connection", __FILE__)
 require File.expand_path("../monga/connections/tcp_connection", __FILE__)
 require File.expand_path("../monga/connections/em_proxy_connection", __FILE__)
 require File.expand_path("../monga/connections/proxy_connection", __FILE__)
+require File.expand_path("../monga/connections/buffer", __FILE__)
 
 require File.expand_path("../monga/client", __FILE__)
 require File.expand_path("../monga/connection", __FILE__)

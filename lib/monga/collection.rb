@@ -69,7 +69,8 @@ module Monga
         if block_given?
           yield(err, resp)
         else
-          err ? raise(err) : resp
+          raise err if err
+          return resp
         end
       end
     end
@@ -79,7 +80,8 @@ module Monga
         if block_given?
           yield(err, resp)
         else
-          err ? raise(err) : resp
+          raise err if err
+          return resp
         end
       end
     end
@@ -89,7 +91,8 @@ module Monga
         if block_given?
           yield(err, resp)
         else
-          err ? raise(err) : resp
+          raise err if err
+          return resp
         end
       end
     end
@@ -99,7 +102,8 @@ module Monga
         if block_given?
           yield(err, resp)
         else
-          err ? raise(err) : resp
+          raise err if err
+          return resp
         end
       end
     end
@@ -109,11 +113,12 @@ module Monga
     #    count(query: {artist: "Madonna"}, limit: 10, skip: 0)
     #
     def count(opts = {})
-      @db.count(@collection_name, opts) do |err, res|
+      @db.count(@collection_name, opts) do |err, resp|
         if block_given?
-          yield(err, res)
+          yield(err, resp)
         else
-          err ? raise(err) : res
+          raise err if err
+          return resp
         end
       end
     end
