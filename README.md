@@ -1,3 +1,5 @@
+It is now completely rewritten with support all kind of interfaces: blocking (TCP Socket), async (EventMachine), sync (Fibers). So API will be changed from Deferrable to callback (NodeJS style).
+
 # Monga
 
 [MongoDB](http://www.mongodb.org/) Ruby Client on [EventMachine](https://github.com/eventmachine/eventmachine). Also it supports synchrony mode ([em-synchrony](https://github.com/igrigorik/em-synchrony)).
