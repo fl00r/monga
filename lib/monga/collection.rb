@@ -54,24 +54,42 @@ module Monga
       # Read docs about naming
       doc[:name] ||= keys.to_a.flatten * "_"
       doc[:key] = keys
-      doc[:ns] = "#{db.name}.#{name}"
+      doc[:ns] = "#{db.name}.#{collection_name}"
       Monga::Protocol::Insert.new(connection, db_name, "system.indexes", {documents: doc}).perform
     end
 
     def drop_index(indexes)
-      @db.drop_indexes(@name, indexes)
+      @db.drop_indexes(@collection_name, indexes) do |err, resp|
+        if block_given?
+          yield(err, resp)
+        else
+          err ? raise(err) : resp
+        end
+      end
     end
 
     def drop_indexes
-      @db.drop_indexes(@name, "*")
+      @db.drop_indexes(@collection_name, "*") do |err, resp|
+        if block_given?
+          yield(err, resp)
+        else
+          err ? raise(err) : resp
+        end
+      end
     end
 
     def get_indexes
-      Monga::Miner.new(@db, "system.indexes").all
+      Monga::Cursor.new(connection, db_name, "system.indexes").all
     end
 
     def drop
-      @db.drop_collection(@name)
+      @db.drop_collection(@collection_name) do |err, resp|
+        if block_given?
+          yield(err, resp)
+        else
+          err ? raise(err) : resp
+        end
+      end
     end
 
     def count

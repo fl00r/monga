@@ -20,6 +20,10 @@ module Monga
       @options[:limit] ||= 0
     end
 
+    def flag(opt)
+      @options.merge!(opt) and self
+    end
+
     def limit(val)
       @options[:limit] = val and self
     end
@@ -135,7 +139,7 @@ module Monga
       if cursor_ids.any?
         Monga.logger.debug("Following cursors are going to be deleted: #{cursor_ids}")
         kill_cursors(conn, cursor_ids)
-        CURSORS.delete_if{|k,v| cursor_ids.include?(k) }
+        cursor_ids.each{ |id| CURSORS.delete id }
       end
     end
 

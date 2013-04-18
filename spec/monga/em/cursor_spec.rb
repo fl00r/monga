@@ -200,4 +200,57 @@ describe Monga::Cursor do
       end
     end
   end
+
+  # TAILABLE CURSOR
+
+  describe "tailable cursor" do
+    before do
+      EM.run do
+        @db.create_collection("testCapped", capped: true, size: 4*1024) do |err, resp|
+          raise err if err
+          @capped =  @db["testCapped"]
+          @capped.safe_insert(title: "Test") do |err, resp|
+            raise err if err
+            EM.stop
+          end
+        end
+      end
+    end
+
+    after do
+      EM.run do
+        @capped = @db["testCapped"]
+        @capped.drop do |err, resp|
+          raise err if err
+          EM.stop
+        end
+      end
+    end
+
+    it "should be tailable" do
+      EM.run do
+        tailable_cursor = @capped.find.flag(tailable_cursor: true)
+        docs = []
+        tailable_cursor.each_doc do |err, res, iter|
+          if iter
+            if res
+              docs << res
+              if docs.size == 2
+                docs.map{ |d| d["title"] }.must_equal ["Test", "New!"]
+                EM.stop
+              else
+                iter.next
+              end
+            else
+              @capped.safe_insert(title: "New!") do |err, res|
+                iter.next
+              end
+            end
+          else
+            EM.stop
+          end
+        end
+      end
+    end
+  end
 end

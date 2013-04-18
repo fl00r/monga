@@ -45,8 +45,13 @@ module Monga
     end
 
     def create_collection(collection_name, opts = {})
-      with_response do
-        run_cmd({create: collection_name}.merge(opts))
+      run_cmd({create: collection_name}.merge(opts)) do |err, resp|
+        err, resp = check_response(err, resp)
+        if block_given? 
+          yield(err, resp)
+        else
+          err ? raise(err) : resp
+        end
       end
     end
 

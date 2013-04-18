@@ -18,6 +18,5 @@ module Monga::Protocol
         b
       end
     end
-
   end
 end
