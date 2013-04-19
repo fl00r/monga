@@ -137,7 +137,7 @@ module Monga
       class_eval <<-EOS
         def safe_#{meth}(*args)
           req = #{meth}(*args)
-          @db.get_last_error(req.connection) do |err, resp|
+          @db.raise_last_error(req.connection) do |err, resp|
             if block_given?
               yield(err, resp)
             else

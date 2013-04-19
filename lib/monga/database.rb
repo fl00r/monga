@@ -63,13 +63,20 @@ module Monga
     #     wtimout: 100){ |err, resp| ... }
     #
     def get_last_error(connection, opts = {}, &blk)
+      raise_last_error(connection, opts, &blk)
+    rescue => e
+      return e
+    end
+
+    # Instead of get_last_eror this one will actually raise it.
+    # It is usefull for safe_* methods who should raise an error if something goes wrong
+    #
+    def raise_last_error(connection, opts = {}, &blk)
       cmd = {}
       cmd[:getLastError] = 1
       cmd[:connection] = connection
       cmd.merge!(opts)
       run_cmd(cmd, blk)
-    rescue => e
-      return e
     end
 
     # Obviously dropping collection
