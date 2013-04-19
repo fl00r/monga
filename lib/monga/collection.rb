@@ -136,8 +136,16 @@ module Monga
     [:update, :insert, :delete, :remove, :ensure_index].each do |meth|
       class_eval <<-EOS
         def safe_#{meth}(*args)
+          last = args.last
+          opts = {}
+          if Hash === last
+            [ :j, :w, :fsync, :wtimeout ].each do |k|
+              v = last.delete k
+              opts[k] = v if v
+            end
+          end
           req = #{meth}(*args)
-          @db.raise_last_error(req.connection) do |err, resp|
+          @db.raise_last_error(req.connection, opts) do |err, resp|
             if block_given?
               yield(err, resp)
             else

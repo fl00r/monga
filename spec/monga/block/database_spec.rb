@@ -5,6 +5,7 @@ describe Monga::Database do
     @client = Monga::Client.new
     @db = @client["dbTest"]
     @collection = @db["testCollection"]
+    @collection.safe_remove
   end
 
   after do
