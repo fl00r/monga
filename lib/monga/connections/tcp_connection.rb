@@ -1,5 +1,10 @@
 require 'socket'
 
+# Currently blocking mode is very poor.
+# It is working as is.
+# Going to support reconnecting and timouts later.
+# Use it for tests and prototyping. Not the best choice for production.
+
 module Monga::Connections
   class TCPConnection
     def self.connect(host, port, timeout)
