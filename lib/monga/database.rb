@@ -40,7 +40,9 @@ module Monga
     #   end
     #
     def eval(js, &blk)
-      run_eval(cmd, blk)
+      cmd = {}
+      cmd[:eval] = js
+      run_cmd(cmd, blk)
     end
 
     # You should be cearfull with this method 'cause it is importaint to know 
@@ -66,6 +68,8 @@ module Monga
       cmd[:connection] = connection
       cmd.merge!(opts)
       run_cmd(cmd, blk)
+    rescue => e
+      return e
     end
 
     # Obviously dropping collection
@@ -77,7 +81,9 @@ module Monga
     #   collection.drop{ |err, resp| ... }
     #
     def drop_collection(collection_name, &blk)
-      run_cmd({ drop: collection_name }, blk)
+      cmd = {}
+      cmd[:drop] = collection_name
+      run_cmd(cmd, blk)
     end
 
     # Create collection.
@@ -128,22 +134,6 @@ module Monga
       run_cmd(cmd, blk)
     end
 
-    def add_user
-      
-    end
-
-    def drop_user
-      
-    end
-
-    def auth
-      
-    end
-
-    def logout
-      
-    end
-
     def map_reduce
       
     end
@@ -157,17 +147,13 @@ module Monga
     #   db.list_collections{ |err, list| ... }
     #
     def list_collections(&blk)
-      run_eval("db.getCollectionNames()", blk)
+      eval("db.getCollectionNames()", &blk)
     end
 
     private
 
-    def run_eval(js, blk)
-      cmd = {}
-      cmd[:eval] = js
-      run_cmd(cmd, blk)
-    end
-
+    # Underlying command sending
+    #
     def run_cmd(cmd, ret_blk, &resp_blk)
       connection = cmd.delete :connection
       connection ||= @client.aquire_connection
@@ -176,10 +162,15 @@ module Monga
       options[:query] = cmd
 
       Monga::CallbackCursor.new(connection, name, "$cmd", options).first do |err, resp|
-        make_response(err, resp, ret_blk, resp_blk)
+        res = make_response(err, resp, ret_blk, resp_blk)
+        return res unless ret_blk
       end
     end
 
+    # Helper to choose how to return result.
+    # If callback is provided it will be passed there.
+    # Otherwise error will be raised and result will be returned with a `return`
+    #
     def make_response(err, resp, ret_blk, resp_blk)
       err, resp = check_response(err, resp)
       if err
@@ -193,11 +184,13 @@ module Monga
         if ret_blk
           ret_blk.call(err, resp)
         else
-          return resp
+          resp
         end
       end
     end
 
+    # Blank result should be interpreted as an error. Ok so.
+    # 
     def check_response(err, data)
       if err
         [err, data]
