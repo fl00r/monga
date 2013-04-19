@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/fl00r/monga.png?branch=master)](https://travis-ci.org/fl00r/monga)
+
 # Monga
 
 [MongoDB](http://www.mongodb.org/) Ruby Client on [EventMachine](https://github.com/eventmachine/eventmachine). Also it supports synchrony mode ([em-synchrony](https://github.com/igrigorik/em-synchrony)).
