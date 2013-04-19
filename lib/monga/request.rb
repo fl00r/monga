@@ -38,7 +38,7 @@ module Monga
 
     # Fire and Forget
     def perform
-      @connection.send_command(command)
+      @connection.send_command(command, @request_id)
       self
     end
 
@@ -105,9 +105,9 @@ module Monga
     end
 
     def self.request_id
-      @request_id ||= 0
-      @request_id += 1
-      @request_id >= 2**32 ? @request_id = 1 : @request_id
+      @@request_id ||= 0
+      @@request_id += 1
+      @@request_id >= 2**32 ? @@request_id = 1 : @@request_id
     end
 
     def self.op_name(op = nil)

@@ -17,6 +17,9 @@ module Monga::Connections
     end
 
     def send_command(msg, request_id=nil, &cb)
+      # Reconnect is a hack for testing.
+      # We are stopping EvenMachine for each test.
+      # This hack reconnects to Mongo on first query
       reconnect unless @connected
 
       callback do
@@ -64,44 +67,28 @@ module Monga::Connections
       end
     end
 
-    def force_reconnect(host, port)
-      @connected = false
-      @host = host
-      @port = port
-    end
-
     def connected?
-      EM.schedule { reconnect } unless @reactor_running
+      reconnect unless @reactor_running
       @connected || false
     end
 
     def unbind
+      @connected = false
       Monga.logger.debug("Lost connection #{@host}:#{@port}")
 
-      @responses.each{ |k, cb| cb.call(Monga::Exceptions::Disconnected.new("Disconnected from #{@host}:#{@port}"))}
+      @responses.keys.each do |k|
+        cb = @responses.delete k
+        err = Monga::Exceptions::Disconnected.new("Disconnected from #{@host}:#{@port}")
+        cb.call(err)
+      end
+
       @primary = false
       @pending_for_reconnect = false
       set_deferred_status(nil)
 
-      if @reactor_running && @timeout
-        unless @pending_timeout
-          @pending_timeout = true
-          EM.add_timer(@timeout) do
-            unless @connected
-              raise Monga::Exceptions::CouldNotReconnect, "Could not reconnect to #{@host}:#{@port}"
-            end
-            @pending_timeout = false
-          end
-        end
+      if @reactor_running
         EM.add_timer(0.1){ reconnect }
-      elsif @reactor_running
-        if @connected
-          raise Monga::Exceptions::Disconnected, "Disconnected from #{@host}:#{@port}"
-        else
-          raise Monga::Exceptions::CouldNotConnect, "Could not connect to #{@host}:#{@port}"
-        end
       end
-      @connected = false
     end
 
     def close
