@@ -7,27 +7,76 @@ module Monga
       @name = name
     end
 
+    # Choose collection to work
+    #
+    #   client = Monga:::Client.new
+    #   db = client.get_db("dbTest")
+    #   collection = db.get_collection("testCollection")
+    #   # same as
+    #   collection = db["testCollection"]
+    #
     def get_collection(collection_name)
       Monga::Collection.new(self, collection_name)
     end
     alias :[] :get_collection
 
+    # Run some command
+    #
+    #   cmd = { getLastError: 1 }
+    #   db.cmd(cmd) do |err, resp|
+    #     # processing
+    #   end
+    #
+    # In sync and blocking mode it will return response
+    #
+    #   resp = db.cmd(cmd)
+    #
     def cmd(cmd, opts = {}, resp_blk = nil, &ret_blk)
       run_cmd(cmd, opts, ret_blk, resp_blk)
     end
 
+    # Evaluate some raw javascript
+    #
+    #   db.eval("return('Hello World!')") do |err, resp|
+    #     # processing
+    #   end
+    #
     def eval(js, &blk)
       run_eval(cmd, blk)
     end
 
+    # You should be cearfull with this method 'cause it is importaint to know 
+    # in wich connection you are trying to get last error information.
+    # So be happy to use safe_* methods and it will choose right connection for you.
+    # Or, if you really want to do it mannually:
+    #
+    #   request = collection.insert({ title: "Test" })
+    #   conn = request.connection
+    #   db.get_last_error(conn) do |err, resp|
+    #     # your code
+    #   end
+    #
     def get_last_error(connection, &blk)
       run_cmd({ getLastError: 1 }, { connection: connection }, blk)
     end
 
+    # Obviously dropping collection
+    # There is collection#drop helper exists
+    #
+    #   db.drop_collection("testCollection"){ |err, resp| ... }
+    #   # same as
+    #   collection = db["testCollection"]
+    #   collection.drop{ |err, resp| ... }
+    #
     def drop_collection(collection_name, &blk)
       run_cmd({ drop: collection_name }, {}, blk)
     end
 
+    # Create collection.
+    #
+    #   db.create_collection("myCollection"){ |err, resp| ... }
+    #   db.create_collection("myCappedCollection", capped: true, size: 1024*10){ |err, resp| ... }
+    #
     def create_collection(collection_name, opts = {}, &blk)
       cmd = {}
       cmd[:create] = collection_name
@@ -35,6 +84,13 @@ module Monga
       run_cmd(cmd, {}, blk)
     end
 
+    # Counts amount of documents in collection
+    #
+    #   db.count("myCollection"){ |err, cnt| ... }
+    #   # same as
+    #   collection = db["myCollection"]
+    #   collection.count{ |err, cnt| ... }
+    #
     def count(collection_name, opts = {}, &blk)
       cmd = {}
       cmd[:count] = collection_name
@@ -44,6 +100,19 @@ module Monga
       end
     end
 
+    # Drop choosen indexes.
+    # There is collection#drop_index and collection#drop_indexes methods available
+    # 
+    #   db.drop_indexes("myCollection", { title: 1 })
+    #   db.drop_indexes("myCollection", [{ title: 1 }, { author: 1 }])
+    #   # drop all indexes
+    #   db.drop_indexes("myCollection", "*")
+    #   # same as
+    #   collection = db["myCollection"]
+    #   collection.drop_index(title: 1)
+    #   # drop all indexes
+    #   collection.drop_indexes
+    #
     def drop_indexes(collection_name, indexes, &blk)
       cmd = {}
       cmd[:dropIndexes] = collection_name
@@ -51,7 +120,10 @@ module Monga
       run_cmd(cmd, {}, blk)
     end
 
-    # Just helper
+    # Just helper to show all list of collections
+    #
+    #   db.list_collections{ |err, list| ... }
+    #
     def list_collections(&blk)
       run_eval("db.getCollectionNames()", blk)
     end
