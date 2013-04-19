@@ -9,7 +9,3 @@ MiniTest::Reporters.use! MiniTest::Reporters::SpecReporter.new
 Monga.logger.level = Logger::ERROR
 
 require 'helpers/mongodb'
-
-INSTANCE = Mongodb::Instance.new(dbpath: "/tmp/mongodb/instance/")
-# REPL_SET_PORTS = [{ port: 29100 }, { port: 29200 }, { port: 29300 }]
-# REPL_SET = Mongodb::ReplicaSet.new(REPL_SET_PORTS)

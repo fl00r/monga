@@ -176,7 +176,7 @@ describe Monga::Cursor do
     before do
       EM.synchrony do
         @db.create_collection("testCapped", capped: true, size: 4*1024)
-        @capped =  @db["testCapped"]
+        @capped = @db["testCapped"]
         @capped.safe_insert(title: "Test")
         EM.stop
       end

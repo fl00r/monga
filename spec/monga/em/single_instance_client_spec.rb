@@ -2,28 +2,24 @@ require 'spec_helper'
 
 describe Monga::Clients::SingleInstanceClient do
   before do
-    EM.run do
-      INSTANCE.start
-      @client = Monga::Client.new(type: :em)
-      @collection = @client["dbTest"]["testCollection"]
-      @collection.safe_remove do
-        EM.stop
-      end
+    EM.synchrony do
+      @client = Monga::Client.new port: 29000, type: :em
+      @collection = @client["dbTest"]["myCollection"]
+      @instance = Fake::MongodbInstance.new(29000)
+      EM.stop
     end
   end
 
-  it "should fail on disconnect and reconnect then" do
-    EM.run do
+  it "should fail on disconnect and reconnect when instance is up again" do
+    EM.synchrony do
+      @instance.start
       @collection.safe_insert(name: "Peter") do
-        INSTANCE.stop
-        @collection.safe_insert(name: "Peter") do |err, msg|
+        @instance.stop
+        @collection.safe_insert(name: "Peter") do |err, resp|
           err.class.must_equal Monga::Exceptions::Disconnected
-          INSTANCE.start
+          @instance.start
           @collection.safe_insert(name: "Madonna") do
-            @collection.count do |err, cnt|
-              cnt.must_equal 2
-              EM.stop
-            end
+            EM.stop
           end
         end
       end

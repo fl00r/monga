@@ -15,7 +15,6 @@ module Monga::Connections
       @host, @port, @timout = host, port, timeout
       @connected = true
       @buffer = Buffer.new
-      socket
     end
 
     def connected?
@@ -35,6 +34,7 @@ module Monga::Connections
       socket.send msg.to_s, 0
       if cb
         length = socket.read(4)
+        raise Errno::ECONNREFUSED, "Socket returns nothing like it would be closed." unless length
         @buffer.append(length)
         l = length.unpack("L").first
         rest = socket.read(l-4)
@@ -45,10 +45,13 @@ module Monga::Connections
           cb.call(message)
         end
       end
-    rescue Errno::EPIPE => e
+    rescue Errno::ECONNREFUSED, Errno::EPIPE => e
+      @connected = false
       @socket = nil
-      err = Monga::Exceptions::Disconnected.new("Disconnected from #{@host}:#{@port}")
-      cb.call(err)
+      if cb
+        err = Monga::Exceptions::Disconnected.new("Disconnected from #{@host}:#{@port}, #{e.message}")
+        cb.call(err)
+      end
     end
   end
 end
