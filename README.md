@@ -17,36 +17,36 @@ API will be familiar to Node.js developers: it returns `err, response` into call
 ```ruby
 # Async mode
 EM.run do
-    connection = Monga::Client.new(host: "127.0.0.1", port: 27017, type: :em)
-    db = connection["dbTest"]
-    collection = db["testCollection"]
-    collection.safe_insert(title: "Test") do |err, resp|
-        if err
-            puts "Error happend: #{err.message}"
+  connection = Monga::Client.new(host: "127.0.0.1", port: 27017, type: :em)
+  db = connection["dbTest"]
+  collection = db["testCollection"]
+  collection.safe_insert(title: "Test") do |err, resp|
+    if err
+      puts "Error happend: #{err.message}"
+    else
+      puts "saved!"
+      collection.find.all do |err, docs|
+        if err 
+          puts "Error happend: #{err.message}"
         else
-            puts "saved!"
-            collection.find.all do |err, docs|
-                if err 
-                    puts "Error happend: #{err.message}"
-                else
-                    puts "Docs fetched: #{docs.size}"
-                end
-                EM.stop
-            end
+          puts "Docs fetched: #{docs.size}"
         end
+        EM.stop
+      end
     end
+  end
 end
 
 # Sync mode
 EM.synchrony do
-    connection = Monga::Client.new(host: "127.0.0.1", port: 27017, type: :sync)
-    db = connection["dbTest"]
-    collection = db["testCollection"]
-    collection.safe_insert(title: "Test")
-    puts "saved"
-    docs = collection.find.all
-    puts "Docs fetched: #{docs.size}"
-    EM.stop
+  connection = Monga::Client.new(host: "127.0.0.1", port: 27017, type: :sync)
+  db = connection["dbTest"]
+  collection = db["testCollection"]
+  collection.safe_insert(title: "Test")
+  puts "saved"
+  docs = collection.find.all
+  puts "Docs fetched: #{docs.size}"
+  EM.stop
 end
 
 # Blocking mode
