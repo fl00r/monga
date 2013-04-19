@@ -7,6 +7,15 @@ module Monga
       @collection_name = collection_name
     end
 
+    # Querying database. It returns cursor.
+    # Alias to collection#query is colleciotn#find
+    #
+    #   cursor = collection.find(title: "Madonna")
+    #   # choose fields to return
+    #   cursor = collection.find({ title: "Madonna" }, { track: 1 })
+    #   # get all documents
+    #   cursor.all{ |err, docs| docs.each{ |doc| puts doc } }
+    #
     def query(query = {}, selector = {}, opts = {})
       options = {}
       options[:query] = query

@@ -23,16 +23,14 @@ module Monga
     # Run some command
     #
     #   cmd = { getLastError: 1 }
-    #   db.cmd(cmd) do |err, resp|
-    #     # processing
-    #   end
+    #   db.cmd(cmd){ |err, resp| ... }
     #
-    # In sync and blocking mode it will return response
-    #
-    #   resp = db.cmd(cmd)
-    #
-    def cmd(cmd, opts = {}, resp_blk = nil, &ret_blk)
-      run_cmd(cmd, opts, ret_blk, resp_blk)
+    def cmd(cmd, resp_blk = nil, &ret_blk)
+      if resp_blk
+        run_cmd(cmd, ret_blk, &resp_blk)
+      else
+        run_cmd(cmd, ret_blk)
+      end
     end
 
     # Evaluate some raw javascript
@@ -52,12 +50,22 @@ module Monga
     #
     #   request = collection.insert({ title: "Test" })
     #   conn = request.connection
-    #   db.get_last_error(conn) do |err, resp|
-    #     # your code
-    #   end
+    #   db.get_last_error(conn){ |err, resp| ... }
+    #   db.get_last_error(conn){ |err, resp| ... }
+    #   # you should pass following options:
+    #   db.get_last_error(
+    #     conn, 
+    #     j: true, 
+    #     w: 2, 
+    #     fsync: true, 
+    #     wtimout: 100){ |err, resp| ... }
     #
-    def get_last_error(connection, &blk)
-      run_cmd({ getLastError: 1 }, { connection: connection }, blk)
+    def get_last_error(connection, opts = {}, &blk)
+      cmd = {}
+      cmd[:getLastError] = 1
+      cmd[:connection] = connection
+      cmd.merge!(opts)
+      run_cmd(cmd, blk)
     end
 
     # Obviously dropping collection
@@ -69,7 +77,7 @@ module Monga
     #   collection.drop{ |err, resp| ... }
     #
     def drop_collection(collection_name, &blk)
-      run_cmd({ drop: collection_name }, {}, blk)
+      run_cmd({ drop: collection_name }, blk)
     end
 
     # Create collection.
@@ -81,7 +89,7 @@ module Monga
       cmd = {}
       cmd[:create] = collection_name
       cmd.merge!(opts)
-      run_cmd(cmd, {}, blk)
+      run_cmd(cmd, blk)
     end
 
     # Counts amount of documents in collection
@@ -95,7 +103,7 @@ module Monga
       cmd = {}
       cmd[:count] = collection_name
       cmd.merge!(opts)
-      run_cmd(cmd, {}, blk) do |resp|
+      run_cmd(cmd, blk) do |resp|
         resp["n"].to_i
       end
     end
@@ -117,7 +125,31 @@ module Monga
       cmd = {}
       cmd[:dropIndexes] = collection_name
       cmd[:index] = indexes
-      run_cmd(cmd, {}, blk)
+      run_cmd(cmd, blk)
+    end
+
+    def add_user
+      
+    end
+
+    def drop_user
+      
+    end
+
+    def auth
+      
+    end
+
+    def logout
+      
+    end
+
+    def map_reduce
+      
+    end
+
+    def aggregate
+      
     end
 
     # Just helper to show all list of collections
@@ -133,16 +165,15 @@ module Monga
     def run_eval(js, blk)
       cmd = {}
       cmd[:eval] = js
-      run_cmd(cmd, {}, blk)
+      run_cmd(cmd, blk)
     end
 
-    def run_cmd(cmd, opts, ret_blk, &resp_blk)
-      connection = opts.delete :connection
+    def run_cmd(cmd, ret_blk, &resp_blk)
+      connection = cmd.delete :connection
       connection ||= @client.aquire_connection
 
       options = {}
       options[:query] = cmd
-      options.merge! opts
 
       Monga::CallbackCursor.new(connection, name, "$cmd", options).first do |err, resp|
         make_response(err, resp, ret_blk, resp_blk)
