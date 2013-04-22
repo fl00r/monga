@@ -1,6 +1,6 @@
 module Monga::Clients
   class ReplicaSetClient
-    attr_reader :read_pref, :timeout
+    attr_reader :read_pref, :timeout, :clients
 
     # ReplicaSetClient creates SingleInstanceClient to each server.
     # Accepts
@@ -16,11 +16,11 @@ module Monga::Clients
       @clients = servers.map do |server|
         case server
         when Hash
-          Monga::SingleInstanceClient.new(opts.merge(server))
+          Monga::Clients::SingleInstanceClient.new(opts.merge(server))
         when String
           h, p = server.split(":")
           o = { host: h, port: p.to_i }
-          Monga::SingleInstanceClient.new(opts.merge(o))
+          Monga::Clients::SingleInstanceClient.new(opts.merge(o))
         end
       end
 
@@ -49,12 +49,14 @@ module Monga::Clients
 
     # Fetch primary server
     def primary
-      @clients.detect{ |c| c.primary? && c.connected? }
+      pr = @clients.detect{ |c| c.primary? && c.connected? }
+      pr.aquire_connection if pr
     end
 
     # Fetch secondary server
     def secondary
-      @clients.select{ |c| c.secondary? && c.connected? }.sample
+      sc = @clients.select{ |c| c.secondary? && c.connected? }.sample
+      sc.aquire_connection if sc
     end
   end
 end

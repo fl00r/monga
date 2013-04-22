@@ -5,7 +5,7 @@ describe Monga::Clients::SingleInstanceClient do
     EM.synchrony do
       @client = Monga::Client.new port: 29000, type: :block
       @collection = @client["dbTest"]["myCollection"]
-      @instance = Fake::MongodbInstance.new(29000)
+      @instance = Fake::SingleInstance.new(29000)
       EM.stop
     end
     @t = Thread.new do

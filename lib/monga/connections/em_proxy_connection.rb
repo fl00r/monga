@@ -22,22 +22,22 @@ module Monga::Connections
         set_timeout
         find_server!
       else
-        error = Monga::Exceptions::ServerDisconnected, "Can't find appropriate server (all disconnected)"
-        cb.call(error)
+        error = Monga::Exceptions::Disconnected.new "Can't find appropriate server (all disconnected)"
+        cb.call(error) if cb
       end
     end
 
-    # If timout happend send exception to all collected requests.
+    # If timeout happend send exception to all collected requests.
     def set_timeout
-      unless @pending_timout
-        @pending_timout = true
-        EM.add_timer(@timout) do
+      unless @pending_timeout
+        @pending_timeout = true
+        EM.add_timer(@timeout) do
           @requests.each do |msg, rid, cb|
-            error = Monga::Exceptions::ServerDisconnected, "Can't find appropriate server (all disconnected)"
+            error = Monga::Exceptions::Disconnected.new "Can't find appropriate server (all disconnected)"
             cb.call(error)
           end
           @requests.clear
-          @pending_timout = false
+          @pending_timeout = false
         end
       end
     end
@@ -46,23 +46,21 @@ module Monga::Connections
     def find_server!
       unless @pending_server
         @pending_server = true
-        @clients.each do |client|
+        _count = 0
+        @client.clients.each do |client|
           client.force_status! do |status|
-            case status
-            when :primary
-              if [:primary, :primary_preferred, :secondary_preferred].inclue? @read_pref
-                @pending_server = false
-                server_found!
-              end
-            when :secondary
-              if [:secondary, :primary_preferred, :secondary_preferred].inclue? @read_pref
-                @pending_server = false
-                server_found!
-              end
-            when nil
+            if status == :primary && [:primary, :primary_preferred, :secondary_preferred].include?(@client.read_pref)
               @pending_server = false
+              server_found!
+            elsif status == :secondary && [:secondary, :primary_preferred, :secondary_preferred].include?(@client.read_pref)
+              @pending_server = false
+              server_found!
+            else
               EM.add_timer(WAIT) do
-                EM.next_tick{ find_server! }
+                EM.next_tick do
+                  @pending_server = false if (_count +=1) == @client.clients.size
+                  find_server!
+                end
               end
             end
           end
@@ -71,8 +69,8 @@ module Monga::Connections
 
       # YEEEHA! Send all collected requests back to client
       def server_found!
-        @requests.each do |req|
-          @client.aquire_connection.send_command(*req)
+        @requests.each do |msg, request_id, blk|
+          @client.aquire_connection.send_command(msg, request_id, &blk)
         end
         @requests.clear
       end

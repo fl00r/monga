@@ -26,20 +26,28 @@ module Monga::Clients
       conn
     end
 
+    def connected?
+      aquire_connection.connected?
+    end
+
     # Check status of connection.
     # If ReplicaSetClient can't find connection with read_pref status 
     # it will send foce_status! to all clients while timout happend
     # or while preferred status will be returned
-    def force_status!(&blk)
-      conn = connection
-      if conn.connected?
-        conn.is_master? do |status|
-          @status = status
-          blk.call(@status)
-        end
-      else
-        blk.call(@status)
+    def force_status!
+      conn = aquire_connection
+      conn.is_master? do |status|
+        @status = status
+        yield(@status) if block_given?
       end
+    end
+
+    def primary?
+      @status == :primary
+    end
+
+    def secondary?
+      @status == :secondary
     end
   end
 end

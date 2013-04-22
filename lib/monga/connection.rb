@@ -2,7 +2,7 @@ module Monga
   class Connection
     extend Forwardable
 
-    def_delegators :@connection, :connected?, :responses, :send_command
+    def_delegators :@connection, :connected?, :responses, :send_command, :is_master?, :port
 
     attr_reader :type
 
@@ -13,7 +13,7 @@ module Monga
     }
     PROXY_CONNECTIONS = {
       em: Monga::Connections::EMProxyConnection,
-      sync: Monga::Connections::EMProxyConnection,
+      sync: Monga::Connections::FiberedProxyConnection,
       block: Monga::Connections::ProxyConnection,
     }
 

@@ -2,7 +2,7 @@ module Monga::Connections
   class EMConnection < EM::Connection
     include EM::Deferrable
 
-    attr_reader :responses
+    attr_reader :responses, :host, :port
 
     def initialize(host, port, timeout)
       @host = host
@@ -96,20 +96,23 @@ module Monga::Connections
       @reactor_running = false
     end
 
-    def master?
+    def primary?
       @primary || false
     end
 
     def is_master?
+      reconnect unless @connected
       req = Monga::Protocol::Query.new(self, "admin", "$cmd", query: {"isMaster" => 1}, limit: 1)
       command = req.command
       request_id = req.request_id
       @responses[request_id] = proc do |data|
-        resp = req.parse_response(data)
-        if Exception === resp
+        err, resp = req.parse_response(data)
+        if Exception === err
           @primary = false
+          yield nil
         else
           @primary = resp.last.first["ismaster"]
+          yield @primary ? :primary : :secondary
         end
       end
       send_data command
