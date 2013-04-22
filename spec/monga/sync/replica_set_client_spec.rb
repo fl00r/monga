@@ -16,7 +16,11 @@ describe Monga::Clients::ReplicaSetClient do
       @collection.safe_insert(name: "Peter")
       @replset.primary.stop
       proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
+      proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
+      proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
       @replset.primary.start
+      @collection.safe_insert(name: "Madonna")
+      @collection.safe_insert(name: "Madonna")
       @collection.safe_insert(name: "Madonna")
       EM.stop
     end
@@ -26,7 +30,9 @@ describe Monga::Clients::ReplicaSetClient do
     EM.synchrony do
       @replset.start_all
       @collection.safe_insert(name: "Peter")
+      @collection.safe_insert(name: "Peter")
       @replset.secondaries.each(&:stop)
+      @collection.safe_insert(name: "Peter")
       @collection.safe_insert(name: "Peter")
       EM.stop
     end
@@ -37,6 +43,8 @@ describe Monga::Clients::ReplicaSetClient do
       @replset.start_all
       @collection.safe_insert(name: "Peter")
       @replset.primary.stop
+      proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
+      proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
       proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
       @replset.vote
       @collection.safe_insert(name: "Madonna")

@@ -2,12 +2,12 @@ module Monga::Connections
   class FiberedProxyConnection < EMProxyConnection
     def send_command(msg, request_id = nil, &cb)
       if @timeout && @timeout > 0
-        @requests << [msg, request_id, @fib]
+        @requests[request_id] = [msg, @fib]
         @fib = Fiber.current
         set_timeout
         find_server!
         res = Fiber.yield
-        @requests.clear
+        @requests.delete(request_id)
         raise res if Exception === res
         @client.aquire_connection.send_command(msg, request_id, &cb)
       else
