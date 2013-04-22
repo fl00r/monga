@@ -61,7 +61,7 @@ module Fake
     end
 
     def primary
-      @si.rs.primary == @si
+      @si.rs.primary == @si if @si.rs
     end
 
     def receive_data(data)
