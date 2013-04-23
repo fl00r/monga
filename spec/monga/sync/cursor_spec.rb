@@ -175,8 +175,8 @@ describe Monga::Cursor do
   describe "tailable cursor" do
     before do
       EM.synchrony do
-        @db.create_collection("testCapped", capped: true, size: 4*1024)
         @capped = @db["testCapped"]
+        @db.create_collection("testCapped", capped: true, size: 4*1024)
         @capped.safe_insert(title: "Test")
         EM.stop
       end
@@ -184,7 +184,7 @@ describe Monga::Cursor do
 
     after do
       EM.synchrony do
-        @db["testCapped"].drop
+        @capped.drop
         EM.stop
       end
     end

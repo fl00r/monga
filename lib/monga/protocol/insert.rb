@@ -10,7 +10,7 @@ module Monga::Protocol
       @body ||= begin
         documents = @options[:documents]
 
-        msg = BinUtils.append_int32_le!(nil, flags)
+        msg = ::BinUtils.append_int32_le!(nil, flags)
         msg << full_name << Monga::NULL_BYTE
         case documents
         when Array

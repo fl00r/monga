@@ -32,12 +32,14 @@ module Monga::Connections
     def send_command(msg, request_id=nil, &cb)
       socket.kgio_write msg.to_s
       if cb
-        read_socket(1024)
-        @buffer.each do |message|
-          rid = message[2]
-          fail "Returned Request Id is not equal to sended one (#{rid} != #{request_id}), #{message}" if rid != request_id
-          cb.call(message)
-        end
+        read_socket
+
+        message = @buffer.responses.shift
+        rid = message[2]
+
+        fail "Returned Request Id is not equal to sended one (#{rid} != #{request_id}), #{message}" if rid != request_id
+
+        cb.call(message)
       end
     rescue Errno::ECONNREFUSED, Errno::EPIPE => e
       @connected = false
@@ -48,20 +50,22 @@ module Monga::Connections
       end
     end
 
-    def read_socket(bytes)
-      torecv = nil
-      while !torecv || torecv > 0
-        resp = socket.kgio_read(torecv || bytes)
+    def read_socket
+      torecv = 512
+      length = nil
+      buf = ''.force_encoding('ASCII-8BIT')
+      tmp = ''
+      while torecv > 0
+        resp = socket.kgio_read(torecv, tmp)
         raise Errno::ECONNREFUSED.new "Nil was return. Closing connection" unless resp
-        @buffer.append(resp)
-        size = resp.bytesize
-        if !torecv && size > 4
-          length = BinUtils.get_int32_le(resp)
+        buf << resp
+        size = buf.bytesize
+        if size > 4
+          length ||= ::BinUtils.get_int32_le(buf)
           torecv = length - size
-        elsif torecv
-          torecv -= size
         end
       end
+      @buffer.append(buf)
     end
   end
 end

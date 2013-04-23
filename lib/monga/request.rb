@@ -28,7 +28,7 @@ module Monga
     end
 
     def header
-      BinUtils.append_int32_le!(nil, command_length, @request_id, 0, op_code)
+      ::BinUtils.append_int32_le!(nil, command_length, @request_id, 0, op_code)
     end
 
     # Fire and Forget

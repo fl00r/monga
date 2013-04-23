@@ -30,14 +30,14 @@ module Monga::Connections
     def parse_meta
       return if @buffer_size < 36
       meta = @buffer[0, 36]
-      msg_length = BinUtils.get_int32_le(meta, @position)
-      request_id = BinUtils.get_int32_le(meta, @position += 4)
-      response_to = BinUtils.get_int32_le(meta, @position += 4)
-      op_code = BinUtils.get_int32_le(meta, @position += 4)
-      flags = BinUtils.get_int32_le(meta, @position += 4)
-      cursor_id = BinUtils.get_int64_le(meta, @position += 4)
-      starting_from = BinUtils.get_int32_le(meta, @position += 8)
-      @number_returned = BinUtils.get_int32_le(meta, @position += 4)
+      msg_length = ::BinUtils.get_int32_le(meta, @position)
+      request_id = ::BinUtils.get_int32_le(meta, @position += 4)
+      response_to = ::BinUtils.get_int32_le(meta, @position += 4)
+      op_code = ::BinUtils.get_int32_le(meta, @position += 4)
+      flags = ::BinUtils.get_int32_le(meta, @position += 4)
+      cursor_id = ::BinUtils.get_int64_le(meta, @position += 4)
+      starting_from = ::BinUtils.get_int32_le(meta, @position += 8)
+      @number_returned = ::BinUtils.get_int32_le(meta, @position += 4)
 
       @position += 4
 
@@ -50,7 +50,7 @@ module Monga::Connections
         return true
       end
       return if @buffer_size < @position + 4
-      doc_length = BinUtils.get_int32_le(@buffer, @position)
+      doc_length = ::BinUtils.get_int32_le(@buffer, @position)
       return if @buffer_size < @position + doc_length
       doc = @buffer[@position, doc_length]
       @response.last << BSON::BSON_CODER.deserialize(doc)

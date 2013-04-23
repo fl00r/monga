@@ -12,8 +12,8 @@ module Monga::Protocol
       @body ||= begin
         cursor_ids = @options[:cursor_ids]
 
-        msg = BinUtils.append_int32_le!(nil, 0, cursor_ids.size)
-        BinUtils.append_int64_le!(msg, 0, *cursor_ids)
+        msg = ::BinUtils.append_int32_le!(nil, 0, cursor_ids.size)
+        ::BinUtils.append_int64_le!(msg, 0, *cursor_ids)
         msg
       end
     end

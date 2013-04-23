@@ -206,9 +206,9 @@ describe Monga::Cursor do
   describe "tailable cursor" do
     before do
       EM.run do
+        @capped = @db["testCapped"]
         @db.create_collection("testCapped", capped: true, size: 4*1024) do |err, resp|
           raise err if err
-          @capped =  @db["testCapped"]
           @capped.safe_insert(title: "Test") do |err, resp|
             raise err if err
             EM.stop

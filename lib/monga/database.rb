@@ -175,7 +175,9 @@ module Monga
 
       Monga::CallbackCursor.new(connection, name, "$cmd", options).first do |err, resp|
         res = make_response(err, resp, ret_blk, resp_blk)
-        return res unless ret_blk
+        unless ret_blk
+          return res 
+        end
       end
     end
 
