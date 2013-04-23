@@ -41,8 +41,9 @@ module Monga
     end
 
     # Returns name of proxy_connection class
-    def self.proxy_connection_class(type)
-      PROXY_CONNECTIONS[type]
+    def self.proxy_connection_class(type, client)
+      conn_class = PROXY_CONNECTIONS[type]
+      conn_class.new(client) if conn_class
     end
   end
 end

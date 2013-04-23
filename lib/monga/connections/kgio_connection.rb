@@ -20,6 +20,7 @@ module Monga::Connections
       @socket ||= begin
         sock = Kgio::TCPSocket.new(@host, @port)
         sock.kgio_autopush = true
+        @connected = true
         sock
       end
     end
@@ -42,8 +43,7 @@ module Monga::Connections
         cb.call(message)
       end
     rescue Errno::ECONNREFUSED, Errno::EPIPE => e
-      @connected = false
-      @socket = nil
+      close
       if cb
         err = Monga::Exceptions::Disconnected.new("Disconnected from #{@host}:#{@port}, #{e.message}")
         cb.call(err)
@@ -66,6 +66,30 @@ module Monga::Connections
         end
       end
       @buffer.append(buf)
+    end
+
+    def primary?
+      @primary || false
+    end
+
+    def is_master?
+      req = Monga::Protocol::Query.new(self, "admin", "$cmd", query: {"isMaster" => 1}, limit: 1)
+      command = req.command
+      request_id = req.request_id
+      socket.kgio_write command
+      read_socket
+      message = @buffer.responses.shift
+      @primary = message.last.first["ismaster"]
+      yield @primary ? :primary : :secondary
+    rescue => e
+      close
+      yield nil
+    end
+
+    def close
+      @socket = nil
+      @primary = false
+      @connected = false
     end
   end
 end

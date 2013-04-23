@@ -91,8 +91,8 @@ module Fake
     end
 
     def start
+      @sign = EM.start_server('127.0.0.1', @port, Fake::Node, self) unless @connected
       @connected = true
-      @sign = EM.start_server '127.0.0.1', @port, Fake::Node, self
     end
 
     def stop

@@ -14,7 +14,7 @@ module Monga::Clients
 
       servers = opts.delete :servers
       @clients = servers.map do |server|
-        case server
+        c = case server
         when Hash
           Monga::Clients::SingleInstanceClient.new(opts.merge(server))
         when String
@@ -22,9 +22,11 @@ module Monga::Clients
           o = { host: h, port: p.to_i }
           Monga::Clients::SingleInstanceClient.new(opts.merge(o))
         end
+        c.force_status!
+        c
       end
 
-      @proxy_connection = Monga::Connection.proxy_connection_class(opts[:type]).new(self)
+      @proxy_connection = Monga::Connection.proxy_connection_class(opts[:type], self)
     end
 
     # Aquires connection due to read_pref option

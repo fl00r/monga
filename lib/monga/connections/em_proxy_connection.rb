@@ -66,14 +66,14 @@ module Monga::Connections
           end
         end
       end
+    end
 
-      # YEEEHA! Send all collected requests back to client
-      def server_found!
-        @pending_timeout = false
-        @requests.keys.each do |request_id|
-          msg, blk = @requests.delete request_id
-          @client.aquire_connection.send_command(msg, request_id, &blk)
-        end
+    # YEEEHA! Send all collected requests back to client
+    def server_found!
+      @pending_timeout = false
+      @requests.keys.each do |request_id|
+        msg, blk = @requests.delete request_id
+        @client.aquire_connection.send_command(msg, request_id, &blk)
       end
     end
   end

@@ -6,8 +6,6 @@
 
 This client is under development. You can try [em-mongo](https://github.com/bcg/em-mongo).
 
-Client supports MongoDB 2.4. Some features won't work in lower versions.
-
 # Introduction
 
 Monga supports asynchronous (over EventMachine), synchronous (Fibers) and blocking (TCPSocket) interfaces.
