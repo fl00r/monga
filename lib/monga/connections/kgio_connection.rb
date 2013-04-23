@@ -1,12 +1,7 @@
-require 'socket'
-
-# Currently blocking mode is very poor.
-# It is working as is.
-# Going to support reconnecting and timouts later.
-# Use it for tests and prototyping. Not the best choice for production.
-
+require 'kgio'
+require 'io/nonblock'
 module Monga::Connections
-  class TCPConnection
+  class KGIOConnection
     def self.connect(host, port, timeout)
       new(host, port, timeout)
     end
@@ -23,7 +18,9 @@ module Monga::Connections
 
     def socket
       @socket ||= begin
-        TCPSocket.new(@host, @port)
+        sock = Kgio::TCPSocket.new(@host, @port)
+        sock.kgio_autopush = true
+        sock
       end
     end
 
@@ -33,17 +30,12 @@ module Monga::Connections
     end
 
     def send_command(msg, request_id=nil, &cb)
-      socket.send msg.to_s, 0
+      socket.kgio_write msg.to_s
       if cb
-        length = socket.read(4)
-        raise Errno::ECONNREFUSED, "Socket returns nothing like it would be closed." unless length
-        @buffer.append(length)
-        l = length.unpack("L").first
-        rest = socket.read(l-4)
-        @buffer.append(rest)
+        read_socket(1024)
         @buffer.each do |message|
           rid = message[2]
-          fail "Returned Request Id is not equal to sended one" if rid != request_id
+          fail "Returned Request Id is not equal to sended one (#{rid} != #{request_id}), #{message}" if rid != request_id
           cb.call(message)
         end
       end
@@ -53,6 +45,22 @@ module Monga::Connections
       if cb
         err = Monga::Exceptions::Disconnected.new("Disconnected from #{@host}:#{@port}, #{e.message}")
         cb.call(err)
+      end
+    end
+
+    def read_socket(bytes)
+      torecv = nil
+      while !torecv || torecv > 0
+        resp = socket.kgio_read(torecv || bytes)
+        raise Errno::ECONNREFUSED.new "Nil was return. Closing connection" unless resp
+        @buffer.append(resp)
+        size = resp.bytesize
+        if !torecv && size > 4
+          length = BinUtils.get_int32_le(resp)
+          torecv = length - size
+        elsif torecv
+          torecv -= size
+        end
       end
     end
   end

@@ -1,5 +1,6 @@
 require "em-synchrony"
 require "bson"
+require "bin_utils"
 require "logger"
 require "forwardable"
 
@@ -23,6 +24,7 @@ require File.expand_path("../monga/clients/replica_set_client", __FILE__)
 require File.expand_path("../monga/connections/em_connection", __FILE__)
 require File.expand_path("../monga/connections/fibered_connection", __FILE__)
 require File.expand_path("../monga/connections/tcp_connection", __FILE__)
+require File.expand_path("../monga/connections/kgio_connection", __FILE__)
 require File.expand_path("../monga/connections/em_proxy_connection", __FILE__)
 require File.expand_path("../monga/connections/fibered_proxy_connection", __FILE__)
 require File.expand_path("../monga/connections/proxy_connection", __FILE__)

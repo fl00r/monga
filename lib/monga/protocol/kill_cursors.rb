@@ -12,13 +12,9 @@ module Monga::Protocol
       @body ||= begin
         cursor_ids = @options[:cursor_ids]
 
-        b = BSON::ByteBuffer.new
-        b.put_int(0)
-        b.put_int(cursor_ids.size)
-        cursor_ids.each do |cursor_id|
-          b.put_long(cursor_id)
-        end
-        b
+        msg = BinUtils.append_int32_le!(nil, 0, cursor_ids.size)
+        BinUtils.append_int64_le!(msg, 0, *cursor_ids)
+        msg
       end
     end
   end

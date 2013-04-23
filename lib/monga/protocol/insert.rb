@@ -10,18 +10,17 @@ module Monga::Protocol
       @body ||= begin
         documents = @options[:documents]
 
-        b = BSON::ByteBuffer.new
-        b.put_int(flags)
-        BSON::BSON_RUBY.serialize_cstr(b, full_name)
+        msg = BinUtils.append_int32_le!(nil, flags)
+        msg << full_name << Monga::NULL_BYTE
         case documents
         when Array
           documents.each do |doc|
-            b.append!(BSON::BSON_C.serialize(doc).to_s)
+            msg << BSON::BSON_C.serialize(doc).to_s
           end
         when Hash
-          b.append!(BSON::BSON_C.serialize(documents).to_s)
+          msg << BSON::BSON_C.serialize(documents).to_s
         end
-        b
+        msg
       end
     end
   end

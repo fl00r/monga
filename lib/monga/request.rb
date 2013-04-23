@@ -24,16 +24,11 @@ module Monga
     end
 
     def command
-      header.append!(body)
+      header + body
     end
 
     def header
-      headers = BSON::ByteBuffer.new
-      headers.put_int(command_length)
-      headers.put_int(@request_id)
-      headers.put_int(0)
-      headers.put_int(op_code)
-      headers
+      BinUtils.append_int32_le!(nil, command_length, @request_id, 0, op_code)
     end
 
     # Fire and Forget
@@ -59,9 +54,7 @@ module Monga
         [data, nil]
       else
         flags = data[4]
-        number = data[7]
-        docs = unpack_docs(data.last, number)
-        data[-1] = docs
+        docs = data.last
         if flags & 2**0 > 0
           Monga::Exceptions::CursorNotFound.new(docs.first)
         elsif flags & 2**1 > 0
@@ -75,14 +68,6 @@ module Monga
     end
 
     private
-
-    def unpack_docs(data, number)
-      number.times.map do
-        size = data.slice(0, 4).unpack("L").first
-        d = data.slice!(0, size)
-        BSON.deserialize(d)
-      end
-    end
 
     def flags
       flags = 0

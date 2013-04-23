@@ -75,7 +75,12 @@ module Monga
       cmd = {}
       cmd[:getLastError] = 1
       cmd[:connection] = connection
-      cmd.merge!(opts)
+
+      cmd[:j] = opts[:j] if opts[:j]
+      cmd[:fsync] = opts[:fsync] if opts[:fsync]
+      cmd[:w] = opts[:w] if opts[:w]
+      cmd[:wtimeout] = opts[:wtimeout] if opts[:wtimeout]
+
       run_cmd(cmd, blk)
     end
 

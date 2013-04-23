@@ -23,14 +23,12 @@ module Monga::Protocol
         query["$orderby"] = @options[:sort] if @options[:sort]
         query["$explain"] = @options[:explain] if @options[:explain]
 
-        b = BSON::ByteBuffer.new
-        b.put_int(flags)
-        BSON::BSON_RUBY.serialize_cstr(b, full_name)
-        b.put_int(skip)
-        b.put_int(limit)
-        b.append!(BSON::BSON_C.serialize(query).to_s)
-        b.append!(BSON::BSON_C.serialize(selector).to_s) if selector.any?
-        b
+        msg = BinUtils.append_int32_le!(nil, flags)
+        msg << full_name << Monga::NULL_BYTE
+        BinUtils.append_int32_le!(msg, skip, limit)
+        msg << BSON::BSON_C.serialize(query).to_s
+        msg << BSON::BSON_C.serialize(selector).to_s if selector.any?
+        msg
       end
     end
 

@@ -7,12 +7,11 @@ module Monga::Protocol
         batch_size = @options[:batch_size] || 0
         cursor_id = @options[:cursor_id]
 
-        b = BSON::ByteBuffer.new
-        b.put_int(0)
-        BSON::BSON_RUBY.serialize_cstr(b, full_name)
-        b.put_int(batch_size)
-        b.put_long(cursor_id)
-        b
+        msg = BinUtils.append_int32_le!(nil, 0)
+        msg << full_name << Monga::NULL_BYTE
+        BinUtils.append_int32_le!(msg, batch_size)
+        BinUtils.append_int64_le!(msg, cursor_id)
+        msg
       end
     end
   end

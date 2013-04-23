@@ -141,7 +141,7 @@ module Monga
           if Hash === last
             [ :j, :w, :fsync, :wtimeout ].each do |k|
               v = last.delete k
-              opts[k] = v if v
+              opts[k] = v if v != nil
             end
           end
           req = #{meth}(*args)

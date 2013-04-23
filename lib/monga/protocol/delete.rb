@@ -10,12 +10,11 @@ module Monga::Protocol
       @body ||= begin
         query = @options[:query]
 
-        b = BSON::ByteBuffer.new
-        b.put_int(0)
-        BSON::BSON_RUBY.serialize_cstr(b, full_name)
-        b.put_int(flags)
-        b.append!(BSON::BSON_C.serialize(query).to_s)
-        b
+        msg = BinUtils.append_int32_le!(nil, 0)
+        msg << full_name << Monga::NULL_BYTE
+        BinUtils.append_int32_le!(msg, flags)
+        msg << BSON::BSON_C.serialize(query).to_s
+        msg
       end
     end
   end

@@ -9,7 +9,7 @@ module Monga
     CONNECTIONS = {
       em: Monga::Connections::EMConnection,
       sync: Monga::Connections::FiberedConnection,
-      block: Monga::Connections::TCPConnection,
+      block: Monga::Connections::KGIOConnection,
     }
     PROXY_CONNECTIONS = {
       em: Monga::Connections::EMProxyConnection,
