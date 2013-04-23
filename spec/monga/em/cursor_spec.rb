@@ -219,7 +219,6 @@ describe Monga::Cursor do
 
     after do
       EM.run do
-        @capped = @db["testCapped"]
         @capped.drop do |err, resp|
           raise err if err
           EM.stop
@@ -246,8 +245,6 @@ describe Monga::Cursor do
                 iter.next
               end
             end
-          else
-            EM.stop
           end
         end
       end

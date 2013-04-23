@@ -231,7 +231,7 @@ module Monga
       end
     end
 
-    def each_batch(&blk)
+    def each_batch
       begin
         batch, more = next_batch
         yield batch
@@ -242,13 +242,11 @@ module Monga
       if doc = @fetched_docs.shift
         [doc, more?]
       else
-        get_more(get_batch_size) do |err, batch, more|
-          raise(err) if err
-          @fetched_docs = batch
-          doc = @fetched_docs.shift
-          m = more || @fetched_docs.any?
-          return [doc, m]
-        end
+        batch, more = next_batch
+        @fetched_docs = batch
+        doc = @fetched_docs.shift
+        m = more || @fetched_docs.any?
+        return [doc, m]
       end
     end
     alias :next_document :next_doc

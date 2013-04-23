@@ -132,20 +132,20 @@ describe Monga::Cursor do
 
   describe "tailable cursor" do
     before do
+      @capped = @db["testCapped"]
       @db.create_collection("testCapped", capped: true, size: 4*1024)
-      @capped =  @db["testCapped"]
       @capped.safe_insert(title: "Test")
     end
 
     after do
-      @db["testCapped"].drop
+      @capped.drop
     end
 
     it "should be tailable" do
       tailable_cursor = @capped.find.flag(tailable_cursor: true)
       docs = []
       tailable_cursor.each_doc do |doc|
-        @capped.insert(title: "New!")
+        @capped.safe_insert(title: "New!")
         if doc
           docs << doc
           if docs.size == 2

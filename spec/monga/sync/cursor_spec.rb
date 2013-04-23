@@ -194,7 +194,7 @@ describe Monga::Cursor do
         tailable_cursor = @capped.find.flag(tailable_cursor: true)
         docs = []
         tailable_cursor.each_doc do |doc|
-          @capped.insert(title: "New!")
+          @capped.safe_insert(title: "New!")
           if doc
             docs << doc
             if docs.size == 2
