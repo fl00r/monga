@@ -17,10 +17,10 @@ describe Monga::Clients::ReplicaSetClient do
       @replset.primary.stop
       proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
       proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
-      proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
-      @replset.primary.start
-      @collection.safe_insert(name: "Madonna")
-      @collection.safe_insert(name: "Madonna")
+      EM.add_timer(0.5) do
+        @replset.primary.start
+      end
+      @collection.safe_insert(name: "Peter")
       @collection.safe_insert(name: "Madonna")
       EM.stop
     end
