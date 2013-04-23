@@ -3,7 +3,7 @@
 This client is under development. You can try 
 
   * [em-mongo](https://github.com/bcg/em-mongo) with Eventmachine inside
-  * oficcial [mongo-ruby-driver](https://github.com/mongodb/mongo-ruby-driver) from 10gen
+  * Official [mongo-ruby-driver](https://github.com/mongodb/mongo-ruby-driver) from 10gen
   * [Moped](http://mongoid.org/en/moped/) from Mongoid guys
 
 # Monga
@@ -83,25 +83,25 @@ end
 Blocking mode is as simple as a potato
 
 ```ruby
-  # client = Monga::Client.new(type: :block)
-  client = Monga::Client.new
-  db = client["testDb"]
-  collection = db["testCollection"]
+# client = Monga::Client.new(type: :block)
+client = Monga::Client.new
+db = client["testDb"]
+collection = db["testCollection"]
 
-  # Fire and forget
-  collection.insert(artist: "Madonna", title: "Frozen")
+# Fire and forget
+collection.insert(artist: "Madonna", title: "Frozen")
 
-  # Safe method
-  collection.safe_insert(artist: "Madonna", title: "Burning Up")
-  puts "Job is done"
+# Safe method
+collection.safe_insert(artist: "Madonna", title: "Burning Up")
+puts "Job is done"
 
-  # Cursor
-  docs = []
-  collection.find.batch_size(100).limit(500).each_doc do |doc|
-    puts "What have we got here: #{doc['title']}"
-    docs << doc
-  end
-  puts "We have got #{docs.size} documents in this pretty array"
+# Cursor
+docs = []
+collection.find.batch_size(100).limit(500).each_doc do |doc|
+  puts "What have we got here: #{doc['title']}"
+  docs << doc
+end
+puts "We have got #{docs.size} documents in this pretty array"
 ```
 
 ## To Do List
