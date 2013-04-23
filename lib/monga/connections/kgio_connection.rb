@@ -60,10 +60,8 @@ module Monga::Connections
         raise Errno::ECONNREFUSED.new "Nil was return. Closing connection" unless resp
         buf << resp
         size = buf.bytesize
-        if size > 4
-          length ||= ::BinUtils.get_int32_le(buf)
-          torecv = length - size
-        end
+        length ||= ::BinUtils.get_int32_le(buf) if size > 4
+        torecv = length - size if length
       end
       @buffer.append(buf)
     end

@@ -1,13 +1,12 @@
 module Monga::Connections
   class Buffer
-    include Enumerable
+    # include Enumerable
 
     attr_reader :buffer, :responses
 
     def initialize
       @buffer = ""
       @position = 0
-      @number_unpacked = 0
       @docs = []
       @responses = []
     end
@@ -20,46 +19,44 @@ module Monga::Connections
     end
 
     def job
-      begin
-        cont = false
-        parse_meta unless @response
-        cont = parse_doc if @position > 0
-      end while cont
+      parse_meta if @position == 0
+      parse_doc if @position > 0
     end
 
     def parse_meta
       return if @buffer_size < 36
-      meta = @buffer[0, 36]
-      msg_length = ::BinUtils.get_int32_le(meta, @position)
-      request_id = ::BinUtils.get_int32_le(meta, @position += 4)
-      response_to = ::BinUtils.get_int32_le(meta, @position += 4)
-      op_code = ::BinUtils.get_int32_le(meta, @position += 4)
-      flags = ::BinUtils.get_int32_le(meta, @position += 4)
-      cursor_id = ::BinUtils.get_int64_le(meta, @position += 4)
-      starting_from = ::BinUtils.get_int32_le(meta, @position += 8)
-      @number_returned = ::BinUtils.get_int32_le(meta, @position += 4)
+      @response = []
+      @response << ::BinUtils.get_int32_le(@buffer, @position)
+      @response << ::BinUtils.get_int32_le(@buffer, @position += 4)
+      @response << ::BinUtils.get_int32_le(@buffer, @position += 4)
+      @response << ::BinUtils.get_int32_le(@buffer, @position += 4)
+      @response << ::BinUtils.get_int32_le(@buffer, @position += 4)
+      @response << ::BinUtils.get_int64_le(@buffer, @position += 4)
+      @response << ::BinUtils.get_int32_le(@buffer, @position += 8)
+      @response << (@number_returned = ::BinUtils.get_int32_le(@buffer, @position += 4))
+      @response << []
 
       @position += 4
-
-      @response = [msg_length, request_id, response_to, op_code, flags, cursor_id, starting_from, @number_returned, []]
     end
 
     def parse_doc
-      if @number_returned == 0
-        done
-        return true
+      while true
+        if @number_returned == 0
+          done
+          break
+        end
+        break if @buffer_size < @position + 4
+        doc_length = ::BinUtils.get_int32_le(@buffer, @position)
+        break if @buffer_size < @position + doc_length
+        doc = @buffer[@position, doc_length]
+        @response[-1] << CBson.deserialize(doc)
+        @position += doc_length
+        @number_returned -= 1
+        if @number_returned == 0
+          done
+          break
+        end
       end
-      return if @buffer_size < @position + 4
-      doc_length = ::BinUtils.get_int32_le(@buffer, @position)
-      return if @buffer_size < @position + doc_length
-      doc = @buffer[@position, doc_length]
-      @response.last << BSON::BSON_CODER.deserialize(doc)
-      @position += doc_length
-      @number_unpacked += 1
-      if @number_unpacked == @number_returned
-        done
-      end
-      return true
     end
 
     def each
@@ -71,10 +68,13 @@ module Monga::Connections
     def done
       @responses << @response
       @response = nil
-      @buffer.slice!(0, @position)
+      if @buffer_size == @position
+        @buffer.clear
+      else
+        @buffer = @buffer[@position, @buffer_size-@position]
+      end
       @buffer_size = @buffer.bytesize
       @position = 0
-      @number_returned = @number_unpacked = 0
     end
   end
 end
