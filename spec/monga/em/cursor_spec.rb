@@ -119,8 +119,8 @@ describe Monga::Cursor do
       EM.run do
         docs = []
         @collection.find.batch_size(2).limit(3).each_batch do |err, batch, iter|
-          docs += batch
           if iter
+            docs += batch
             iter.next
           else
             docs.size.must_equal 3
@@ -157,8 +157,8 @@ describe Monga::Cursor do
       EM.run do
         docs = []
         @collection.find.limit(100).skip(15).batch_size(3).each_doc do |err, doc, iter|
-          docs << doc
           if iter
+            docs << doc
             iter.next
           else
             docs.size.must_equal 5
@@ -172,8 +172,8 @@ describe Monga::Cursor do
       EM.run do
         docs = []
         @collection.find.batch_size(3).each_doc do |err, doc, iter|
-          docs << doc
           if iter
+            docs << doc
             iter.next
           else
             docs.size.must_equal 20

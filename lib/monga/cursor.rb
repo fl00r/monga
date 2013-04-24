@@ -154,9 +154,16 @@ module Monga
     end
 
     def each_batch(&blk)
+      iter_more = true
       iterator = Proc.new do
-        next_batch do |err, batch, more|
-          more ? blk.call(err, batch, iterator) : blk.call(err, batch)
+        if iter_more
+          next_batch do |err, batch, more|
+            iter_more = more
+            (more || batch || err) ? blk.call(err, batch, iterator) : blk.call
+          end
+        else
+          # iteration stopped
+          blk.call
         end
       end
       class << iterator
@@ -184,9 +191,16 @@ module Monga
     alias :next_document :next_doc
 
     def each_doc(&blk)
+      iter_more = true
       iterator = Proc.new do
-        next_doc do |err, doc, more|
-          more ? blk.call(err, doc, iterator) : blk.call(err, doc)
+        if iter_more
+          next_doc do |err, doc, more|
+            iter_more = more
+            (more || doc || err) ? blk.call(err, doc, iterator) : blk.call
+          end
+        else
+          # iteration stopped
+          blk.call
         end
       end
       class << iterator
@@ -202,8 +216,8 @@ module Monga
         if err
           block_given? ? yield(err) : raise(err)
         else
-          documents += batch
           if iter
+            documents += batch
             iter.next
           else
             block_given? ? yield(nil, documents) : documents

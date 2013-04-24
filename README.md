@@ -34,22 +34,21 @@ EM.run do
     if err
       puts "Ha, an error! #{err.message}"
     else
-      puts "Job is done"
+      puts "Job is done. Let's do more job"
+
+      # Cursor
+      collection.find.batch_size(100).limit(500).each_doc do |err, doc, iter|
+        if iter
+          puts "What have we got here: #{doc['title']}"
+          iter.next
+        else
+          puts "No more documents in collection"
+          EM.stop
+        end
+      end
+      # Yes, you should call `iter.next`, welcome to callback world!
     end
   end
-
-  # Cursor
-  collection.find.batch_size(100).limit(500).each_doc do |err, doc, iter|
-    puts "What have we got here: #{doc['title']}"
-    if iter
-      iter.next
-    else
-      puts "No more documents in collection"
-    end
-  end
-  # Yes, you should call `iter.next`, welcome to callback world!
-
-  EM.stop
 end
 ```
 
