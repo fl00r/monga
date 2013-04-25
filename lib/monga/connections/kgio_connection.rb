@@ -1,5 +1,5 @@
 require 'kgio'
-require 'io/nonblock'
+require 'io/nonblock' # ha?
 module Monga::Connections
   class KGIOConnection
     def self.connect(host, port, timeout)
