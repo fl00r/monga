@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Monga::Database do
   before do
     EM.synchrony do
-      @client = Monga::Client.new
+      @client = Monga::Client.new type: :sync
       @db = @client["dbTest"]
       @collection = @db["testCollection"]
       @collection.safe_remove

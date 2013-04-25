@@ -3,8 +3,8 @@ require 'spec_helper'
 describe Monga::Clients::SingleInstanceClient do
   before do
     EM.synchrony do
-      @instance = Fake::SingleInstance.new(29000)
-      @client = Monga::Client.new port: 29000, type: :sync
+      @instance = Fake::SingleInstance.new(39000)
+      @client = Monga::Client.new port: 39000, type: :sync
       @collection = @client["dbTest"]["myCollection"]
       EM.stop
     end

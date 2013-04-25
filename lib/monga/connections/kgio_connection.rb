@@ -19,7 +19,8 @@ module Monga::Connections
     def socket
       @socket ||= begin
         sock = Kgio::TCPSocket.new(@host, @port)
-        sock.kgio_autopush = true
+        # Macos doesn't support autopush
+        sock.kgio_autopush = true unless RUBY_PLATFORM['darwin']
         @connected = true
         sock
       end

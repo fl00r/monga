@@ -105,7 +105,7 @@ module Monga::Connections
       req = Monga::Protocol::Query.new(self, "admin", "$cmd", query: {"isMaster" => 1}, limit: 1)
       command = req.command
       request_id = req.request_id
-      @responses[request_id] = proc do |data|
+      blk = proc do |data|
         err, resp = req.parse_response(data)
         if Exception === err
           @primary = false
@@ -115,7 +115,7 @@ module Monga::Connections
           yield @primary ? :primary : :secondary
         end
       end
-      send_data command
+      send_command command, request_id, &blk
     end
   end
 end
