@@ -35,9 +35,14 @@ module Monga::Clients
     # it will send foce_status! to all clients while timout happend
     # or while preferred status will be returned
     def force_status!
-      conn = aquire_connection
-      conn.is_master? do |status|
-        @status = status
+      if connected?
+        conn = aquire_connection
+        conn.is_master? do |status|
+          @status = status
+          yield(@status) if block_given?
+        end
+      else
+        @status = nil
         yield(@status) if block_given?
       end
     end

@@ -248,7 +248,7 @@ module Monga
     def each_batch
       begin
         batch, more = next_batch
-        yield batch
+        yield batch if more || batch
       end while more
     end
 
@@ -268,7 +268,7 @@ module Monga
     def each_doc
       begin
         doc, more = next_doc
-        yield doc
+        yield doc if more || doc
       end while more
     end
     alias :each_document :each_doc

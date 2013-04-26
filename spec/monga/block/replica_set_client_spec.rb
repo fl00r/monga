@@ -25,8 +25,8 @@ describe Monga::Clients::ReplicaSetClient do
     @collection.safe_insert(name: "Peter")
     @replset.primary.stop
     proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
-    proc{ @collection.safe_insert(name: "Peter") }.must_raise Timeout::Error
-    proc{ @collection.safe_insert(name: "Peter") }.must_raise Timeout::Error
+    proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
+    proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
     @replset.primary.start
     sleep(0.1)
     @collection.safe_insert(name: "Madonna")
@@ -50,9 +50,10 @@ describe Monga::Clients::ReplicaSetClient do
     @collection.safe_insert(name: "Peter")
     @replset.primary.stop
     proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
-    proc{ @collection.safe_insert(name: "Peter") }.must_raise Timeout::Error
-    proc{ @collection.safe_insert(name: "Peter") }.must_raise Timeout::Error
+    proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
+    proc{ @collection.safe_insert(name: "Peter") }.must_raise Monga::Exceptions::Disconnected
     @replset.vote
+    sleep 0.1
     @collection.safe_insert(name: "Madonna")
   end
 end

@@ -2,14 +2,14 @@ module Monga::Connections
   class FiberedProxyConnection < EMProxyConnection
     def send_command(msg, request_id = nil, &cb)
       if @timeout && @timeout > 0
-        @requests[request_id] = [msg, @fib]
         @fib = Fiber.current
+        @requests[request_id] = [msg, @fib]
         set_timeout
         find_server!
         res = Fiber.yield
-        @requests.delete(request_id)
         raise res if Exception === res
-        @client.aquire_connection.send_command(msg, request_id, &cb)
+        conn = @client.aquire_connection
+        conn.send_command(msg, request_id, &cb)
       else
         error = Monga::Exceptions::Disconnected.new "Can't find appropriate server (all disconnected)"
         cb.call(error) if cb
@@ -17,7 +17,13 @@ module Monga::Connections
     end
 
     def server_found!
-      @fib.resume
+      @pending_server = false
+      @pending_timeout.cancel if @pending_timeout
+      @pending_timeout = nil
+      @requests.keys.each do |req_id|
+        msg, fib = @requests.delete req_id
+        fib.call
+      end
     end
   end
 end

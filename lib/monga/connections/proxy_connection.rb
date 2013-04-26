@@ -3,7 +3,7 @@ require 'timeout'
 module Monga::Connections
   class ProxyConnection
     # Pause while searching server in seconds
-    WAIT = 0.1
+    WAIT = 0.3
     
     def initialize(client)
       @client = client
@@ -32,6 +32,8 @@ module Monga::Connections
           sleep(WAIT)
         end
       end
+    rescue Timeout::Error => e
+      raise Monga::Exceptions::Disconnected.new "Can't find appropriate server (all disconnected)"
     end
 
     # Find server unless server is found

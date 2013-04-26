@@ -4,9 +4,9 @@ describe Monga::Clients::ReplicaSetClient do
   before do
     EM.run do
       @replset = Fake::ReplicaSet.new([39000, 39100, 39200])
+      @replset.start_all
       @client = Monga::Client.new servers: ['127.0.0.1:39000', '127.0.0.1:39100', '127.0.0.1:39200'], type: :em, timeout: 1
       @collection = @client["dbTest"]["myCollection"]
-      @replset.start_all
       EM.stop
     end
   end

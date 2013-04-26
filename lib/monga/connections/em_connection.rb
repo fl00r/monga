@@ -115,7 +115,8 @@ module Monga::Connections
           yield @primary ? :primary : :secondary
         end
       end
-      send_command command, request_id, &blk
+      @responses[request_id] = blk
+      send_data command
     end
   end
 end

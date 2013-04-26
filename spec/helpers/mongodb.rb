@@ -61,7 +61,8 @@ module Fake
     end
 
     def primary
-      @si.rs.primary == @si if @si.rs
+      pr = @si.rs.primary == @si if @si.rs
+      pr
     end
 
     def receive_data(data)
@@ -82,12 +83,13 @@ module Fake
   # Single instance binded on one port.
   # Could be stopped or started.
   class SingleInstance
-    attr_reader :rs
+    attr_reader :rs, :port
     attr_accessor :server
 
     def initialize(port, rs=nil)
       @rs = rs
       @port = port
+      EM.add_shutdown_hook{ @connected = false }
     end
 
     def start

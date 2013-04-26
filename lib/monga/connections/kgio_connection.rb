@@ -13,17 +13,22 @@ module Monga::Connections
     end
 
     def connected?
+      socket unless @connected
       @connected
     end
 
     def socket
       @socket ||= begin
         sock = Kgio::TCPSocket.new(@host, @port)
-        # Macos doesn't support autopush
         sock.kgio_autopush = true unless RUBY_PLATFORM['darwin']
+        # check connection
+        sock.kgio_write ""
+        # Macos doesn't support autopush
         @connected = true
         sock
       end
+    rescue => e
+      nil
     end
 
     # Fake answer, as far as we are blocking
@@ -32,6 +37,7 @@ module Monga::Connections
     end
 
     def send_command(msg, request_id=nil, &cb)
+      raise Errno::ECONNREFUSED, "Connection Refused" unless socket
       socket.kgio_write msg.to_s
       if cb
         read_socket
