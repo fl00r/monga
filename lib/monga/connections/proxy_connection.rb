@@ -4,6 +4,10 @@ module Monga::Connections
   class ProxyConnection
     # Pause while searching server in seconds
     WAIT = 0.3
+
+    def type
+      :block
+    end
     
     def initialize(client)
       @client = client

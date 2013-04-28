@@ -14,6 +14,10 @@ module Monga::Connections
       @requests = {}
     end
 
+    def type
+      :em
+    end
+
     # If timeout is defined then collect request and start timeout.
     # If timeout is not defined or zero then return exception.
     def send_command(msg, request_id = nil, &cb)

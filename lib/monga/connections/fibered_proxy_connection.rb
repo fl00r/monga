@@ -1,5 +1,10 @@
 module Monga::Connections
   class FiberedProxyConnection < EMProxyConnection
+
+    def type
+      :sync
+    end
+    
     def send_command(msg, request_id = nil, &cb)
       if @timeout && @timeout > 0
         @fib = Fiber.current

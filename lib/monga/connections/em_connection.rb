@@ -25,16 +25,15 @@ module Monga::Connections
       callback do
         send_data msg
       end
-      @responses[request_id] = cb if cb
+      @responses[request_id] = cb  if cb
     end
 
     def receive_data(data)
       @buffer.append(data)
       @buffer.each do |message|
-        # p ["msg", @buffer.responses.size, @buffer.buffer]
         request_id = message[2]
         cb = @responses.delete request_id
-        cb.call(message) if cb
+        cb.call(message)  if cb
       end
     end
 
