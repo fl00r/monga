@@ -19,8 +19,10 @@ module Monga::Connections
     end
 
     def parse
-      parse_meta  if @position == 0
-      parse_doc  if @position > 0
+      begin
+        more = parse_meta  if @position == 0
+        parse_doc  if @position > 0
+      end while more && @position == 0
     end
 
     def parse_meta

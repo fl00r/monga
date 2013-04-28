@@ -22,7 +22,7 @@ module Monga::Connections
         set_timeout unless @pending_timeout
         find_server! unless @pending_server
       else
-        error = Monga::Exceptions::Disconnected.new "Can't find appropriate server (all disconnected)"
+        error = Monga::Exceptions::Disconnected.new "Can't find appropriate server (all disconnected) without timeout"
         cb.call(error) if cb
       end
     end
@@ -36,6 +36,7 @@ module Monga::Connections
 
     def timeout_happend
       @timeout_happend = false
+      @pending_timeout.cancel  if @pending_timeout
       @pending_timeout = false
       @pending_server = false
       @requests.keys.each do |request_id|

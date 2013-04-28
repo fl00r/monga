@@ -31,6 +31,7 @@ module Monga::Connections
     def receive_data(data)
       @buffer.append(data)
       @buffer.each do |message|
+        # p ["msg", @buffer.responses.size, @buffer.buffer]
         request_id = message[2]
         cb = @responses.delete request_id
         cb.call(message) if cb
@@ -68,7 +69,7 @@ module Monga::Connections
     end
 
     def connected?
-      reconnect unless @reactor_running
+      reconnect unless @connected
       @connected || false
     end
 

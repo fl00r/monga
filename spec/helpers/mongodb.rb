@@ -61,8 +61,7 @@ module Fake
     end
 
     def primary
-      pr = @si.rs.primary == @si if @si.rs
-      pr
+      @si.rs.primary == @si  if @si.rs
     end
 
     def receive_data(data)
@@ -93,12 +92,12 @@ module Fake
     end
 
     def start
-      @sign = EM.start_server('127.0.0.1', @port, Fake::Node, self) unless @connected
+      @sign = EM.start_server('127.0.0.1', @port, Fake::Node, self)  unless @connected
       @connected = true
     end
 
     def stop
-      @server.close_connection
+      @server.close_connection  if @server
       EM.stop_server @sign
       @connected = false
     end
@@ -123,6 +122,7 @@ module Fake
 
     def vote
       @primary = @instances.select{|inst| inst.connected? }.sample
+      @primary
     end
 
     def primary

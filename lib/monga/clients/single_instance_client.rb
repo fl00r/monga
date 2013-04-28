@@ -42,7 +42,6 @@ module Monga::Clients
           yield(@status) if block_given?
         end
       else
-        @status = nil
         yield(@status) if block_given?
       end
     end
