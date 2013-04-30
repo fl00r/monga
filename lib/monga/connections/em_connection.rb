@@ -1,3 +1,5 @@
+require "eventmachine"
+
 module Monga::Connections
   class EMConnection < EM::Connection
     include EM::Deferrable

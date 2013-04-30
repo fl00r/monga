@@ -1,5 +1,6 @@
-module Fake
+require 'eventmachine'
 
+module Fake
   # Fake Response.
   # It could be `ok`, or `primary?` reply.
   class Response

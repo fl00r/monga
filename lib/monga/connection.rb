@@ -6,17 +6,6 @@ module Monga
 
     attr_reader :type
 
-    CONNECTIONS = {
-      em: Monga::Connections::EMConnection,
-      sync: Monga::Connections::FiberedConnection,
-      block: Monga::Connections::KGIOConnection,
-    }
-    PROXY_CONNECTIONS = {
-      em: Monga::Connections::EMProxyConnection,
-      sync: Monga::Connections::FiberedProxyConnection,
-      block: Monga::Connections::ProxyConnection,
-    }
-
     # Simple connection wrapper.
     # Accpets 
     # * host/port or server
@@ -35,15 +24,36 @@ module Monga
       end
       timeout = opts[:timeout]
 
-      conn_type = CONNECTIONS[@type]
-      raise Monga::Exceptions::WrongConnectionType, "Connection type `#{opts[:type]}` is non valid, choose one of: :em, :sync, or :block" unless conn_type
-      @connection = conn_type.connect(host, port, timeout)
+      @connection = case @type
+      when :em
+        require File.expand_path("../connections/em_connection", __FILE__)
+        Monga::Connections::EMConnection.connect(host, port, timeout)
+      when :sync
+        require File.expand_path("../connections/em_connection", __FILE__)
+        require File.expand_path("../connections/fibered_connection", __FILE__)
+        Monga::Connections::FiberedConnection.connect(host, port, timeout)
+      when :block
+        require File.expand_path("../connections/kgio_connection", __FILE__)
+        Monga::Connections::KGIOConnection.connect(host, port, timeout)
+      else
+        raise Monga::Exceptions::WrongConnectionType, "Connection type `#{opts[:type]}` is non valid, choose one of: :em, :sync, or :block" unless conn_type
+      end
     end
-
+    
     # Returns name of proxy_connection class
     def self.proxy_connection_class(type, client)
-      conn_class = PROXY_CONNECTIONS[type]
-      conn_class.new(client) if conn_class
+      case type
+      when :em
+        require File.expand_path("../connections/em_proxy_connection", __FILE__)
+        Monga::Connections::EMProxyConnection.new(client)
+      when :sync
+        require File.expand_path("../connections/em_proxy_connection", __FILE__)
+        require File.expand_path("../connections/fibered_proxy_connection", __FILE__)
+        Monga::Connections::FiberedProxyConnection.new(client)
+      when :block
+        require File.expand_path("../connections/proxy_connection", __FILE__)
+        Monga::Connections::ProxyConnection.new(client)
+      end
     end
   end
 end

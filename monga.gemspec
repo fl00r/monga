@@ -7,8 +7,8 @@ Gem::Specification.new do |spec|
   spec.version       = "0.0.6"
   spec.authors       = ["Petr Yanovich"]
   spec.email         = ["fl00r@yandex.ru"]
-  spec.description   = %q{MongoDB Ruby Evented Driver on EventMachine}
-  spec.summary       = %q{MongoDB Ruby Evented Driver on EventMachine}
+  spec.description   = %q{Yet another MongoDB Ruby Client}
+  spec.summary       = %q{Yet another MongoDB Ruby Client}
   spec.homepage      = ""
   spec.license       = "MIT"
 
