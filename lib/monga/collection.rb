@@ -132,6 +132,17 @@ module Monga
       end
     end
 
+    def map_reduce(opts, &blk)
+      @db.map_reduce(@collection_name, opts) do |err, resp|
+        if block_given?
+          yield(err, resp)
+        else
+          raise err if err
+          return resp
+        end
+      end
+    end
+
     # Safe methods
     [:update, :insert, :delete, :remove, :ensure_index].each do |meth|
       class_eval <<-EOS

@@ -146,8 +146,25 @@ module Monga
       run_cmd(cmd, blk)
     end
 
-    def map_reduce
-      
+    # Run mapReduce command.
+    # Available options:
+    #   
+    #   * map - A JavaScript function that associates or “maps” a value with a key and emits the key and value pair.
+    #   * reduce - A JavaScript function that “reduces” to a single object all the values associated with a particular key.
+    #   * out - Specifies the location of the result of the map-reduce operation.
+    #   * query - Specifies the selection criteria.
+    #   * sort - Sorts the input documents.
+    #   * limit - Specifies a maximum number of documents to return from the collection
+    #   * finalize
+    #   * scope
+    #   * jsMode
+    #   * verbose
+    #
+    def map_reduce(collection_name, opts, &blk)
+      cmd = {}
+      cmd[:mapReduce] = collection_name
+      cmd.merge! opts
+      run_cmd(cmd, blk)
     end
 
     def aggregate

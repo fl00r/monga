@@ -305,4 +305,37 @@ describe Monga::Collection do
       end
     end
   end
+
+  # MAP/REDUCE
+
+  describe "map_reduce" do
+    before do
+      EM.run do
+        @collection.safe_remove do
+          docs = []
+          5.times do |i|
+            docs << { title: "The Book", count: i }
+          end
+          @collection.safe_insert(docs) do
+            EM.stop
+          end
+        end
+      end
+    end
+
+    it "should run map reduce" do
+      EM.run do
+        map_func = "function() {
+                      emit(this.title, this.count);
+                    };"
+        red_func = "function(docTitle, docCount) {
+                      return Array.sum(docCount);
+                    };"
+        @collection.map_reduce(map: map_func, reduce: red_func, out: {inline: 1} ) do |err, res|
+          res["results"].first["value"].must_equal 10.0
+          EM.stop
+        end
+      end
+    end
+  end
 end
