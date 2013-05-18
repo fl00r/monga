@@ -167,7 +167,29 @@ module Monga
       run_cmd(cmd, blk)
     end
 
-    def aggregate
+    # Run aggregate command.
+    # 
+    def aggregate(collection_name, pipeline, &blk)
+      cmd = {}
+      cmd[:aggregate] = collection_name
+      cmd[:pipeline] = pipeline
+      run_cmd(cmd, blk)
+    end
+
+    # Run distinct command.
+    # You should pass collection_name and key.
+    # Query option is optional.
+    # 
+    def distinct(collection_name, opts, &blk)
+      cmd = {}
+      cmd[:distinct] = collection_name
+      cmd.merge! opts
+      run_cmd(cmd, blk)
+    end
+
+    # Run group command.
+    #
+    def group
       
     end
 

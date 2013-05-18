@@ -143,6 +143,28 @@ module Monga
       end
     end
 
+    def aggregate(pipeline, &blk)
+      @db.aggregate(@collection_name, pipeline) do |err, resp|
+        if block_given?
+          yield(err, resp)
+        else
+          raise err if err
+          return resp
+        end
+      end
+    end
+
+    def distinct(opts, &blk)
+      @db.distinct(collection_name, opts) do |err, resp|
+        if block_given?
+          yield(err, resp)
+        else
+          raise err if err
+          return resp
+        end
+      end
+    end
+
     # Safe methods
     [:update, :insert, :delete, :remove, :ensure_index].each do |meth|
       class_eval <<-EOS
