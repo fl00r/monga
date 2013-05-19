@@ -147,6 +147,7 @@ puts "We have got #{docs.size} documents in this pretty array"
 * [x] distinct
 * [x] group
 * [x] mapReduce
+* [x] text
 * [ ] gridfs?
 
 ### Collection

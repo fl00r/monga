@@ -206,6 +206,21 @@ module Monga
       run_cmd(cmd, blk)
     end
 
+    # Run text command.
+    # Available options are:
+    #   search (string) – A string of terms that MongoDB parses and uses to query the text index
+    #   filter (document) – A query document to further limit the results of the query using another database field
+    #   project (document) – Allows you to limit the fields returned by the query to only those specified.
+    #   limit (number) – Specify the maximum number of documents to include in the response
+    #   language (string) – Specify the language that determines for the search the list of stop words and the rules for the stemmer and tokenizer
+    #   
+    def text(collection_name, opts, &blk)
+      cmd = {}
+      cmd[:text] = collection_name
+      cmd.merge! opts
+      run_cmd(cmd, blk)
+    end
+
     # Just helper to show all list of collections
     #
     #   db.list_collections{ |err, list| ... }
