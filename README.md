@@ -143,7 +143,10 @@ puts "We have got #{docs.size} documents in this pretty array"
 * [ ] check maxBsonSize / validate
 * [x] cmd
 * [x] eval
-* [ ] aggregation
+* [x] aggregate
+* [x] distinct
+* [x] group
+* [x] mapReduce
 * [ ] gridfs?
 
 ### Collection
