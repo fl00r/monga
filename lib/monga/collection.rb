@@ -176,7 +176,8 @@ module Monga
       end
     end
 
-    def text(opts, &blk)
+    def text(search, opts = {}, &blk)
+      opts[:search] = search
       @db.text(collection_name, opts) do |err, resp|
         if block_given?
           yield(err, resp)

@@ -190,4 +190,25 @@ describe Monga::Collection do
       @collection.map_reduce(map: map_func, reduce: red_func, out: {inline: 1} )["results"].first["value"].must_equal 10.0
     end
   end
+
+  # AGGREGATE, GROUP, DISTINCT
+
+  describe "aggregate, group, distinct" do
+
+  end
+
+  # TEXT SEARCH
+
+  # describe "text search" do
+  #   before do
+  #     @collection.safe_ensure_index(author: "text")
+  #     @collection.safe_insert(author: "Lady Gaga", track: "No. 1")
+  #     @collection.safe_insert(author: "Lady Gaga", track: "No. 2")
+  #     @collection.safe_insert(author: "Madonna", track: "No. 1")
+  #   end
+
+  #   it "should find some tracks" do
+  #     @collection.text("Lady")
+  #   end
+  # end
 end

@@ -166,7 +166,7 @@ module Monga
       cmd = {}
       cmd[:mapReduce] = collection_name
       cmd.merge! opts
-      mcd[:out] ||= { inline: 1 }
+      cmd[:out] ||= { inline: 1 }
       run_cmd(cmd, blk)
     end
 
