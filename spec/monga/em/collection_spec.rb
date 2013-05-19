@@ -338,4 +338,40 @@ describe Monga::Collection do
       end
     end
   end
+
+  # AGGREGATE, GROUP, DISTINCT
+
+  describe "aggregate, group, distinct" do
+
+  end
+
+  # TEXT SEARCH
+
+  describe "text search" do
+    before do
+      EM.run do
+        @collection.safe_ensure_index(author: "text") do
+          @collection.safe_insert([
+            { author: "Lady Gaga", track: "No. 1" },
+            { author: "Lady Gaga", track: "No. 2" },
+            { author: "Madonna", track: "No. 1" }
+          ]) do
+            EM.stop
+          end
+        end
+      end
+    end
+
+    it "should find some tracks" do
+      EM.run do
+        @collection.text("Lady") do |err, res|
+          res["results"].map{ |r| r["obj"]["track"] }.sort.must_equal ["No. 1", "No. 2"]
+          @collection.text("Madonna") do |err, res|
+            res["results"].map{ |r| r["obj"]["track"] }.sort.must_equal ["No. 1"]
+            EM.stop
+          end
+        end
+      end
+    end
+  end
 end
