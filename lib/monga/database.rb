@@ -159,11 +159,14 @@ module Monga
     #   * scope
     #   * jsMode
     #   * verbose
+    # 
+    # Inline response returned by default.
     #
     def map_reduce(collection_name, opts, &blk)
       cmd = {}
       cmd[:mapReduce] = collection_name
       cmd.merge! opts
+      mcd[:out] ||= { inline: 1 }
       run_cmd(cmd, blk)
     end
 
@@ -188,9 +191,19 @@ module Monga
     end
 
     # Run group command.
+    # Available options are:
+    #   key – Specifies one or more document fields to group
+    #   $reduce – Specifies an aggregation function that operates on the documents during the grouping operation
+    #   initial – Initializes the aggregation result document
+    #   $keyf – Specifies a function that creates a “key object” for use as the grouping key
+    #   cond – Specifies the selection criteria to determine which documents in the collection to process
+    #   finalize – Specifies a function that runs each item in the result
     #
-    def group
-      
+    def group(collection_name, opts, &blk)
+      cmd = {}
+      cmd[:group] = opts
+      cmd[:group][:ns] ||= collection_name
+      run_cmd(cmd, blk)
     end
 
     # Just helper to show all list of collections

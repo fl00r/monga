@@ -8,7 +8,7 @@ module Monga
     end
 
     # Querying database. It returns cursor.
-    # Alias to collection#query is colleciotn#find
+    # Alias to collection#query is collection#find
     #
     #   cursor = collection.find(title: "Madonna")
     #   # choose fields to return
@@ -156,6 +156,17 @@ module Monga
 
     def distinct(opts, &blk)
       @db.distinct(collection_name, opts) do |err, resp|
+        if block_given?
+          yield(err, resp)
+        else
+          raise err if err
+          return resp
+        end
+      end
+    end
+
+    def group(opts, &blk)
+      @db.group(collection_name, opts) do |err, resp|
         if block_given?
           yield(err, resp)
         else
