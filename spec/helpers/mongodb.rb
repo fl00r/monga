@@ -12,12 +12,10 @@ module Fake
     def ok(doc = nil)
       document = doc || { ok: 1.0 }
       [flags, cursor_id, starting_from, number_returned].pack("LQLL")
-      b = BSON::ByteBuffer.new
-      b.put_int(flags)
-      b.put_long(cursor_id)
-      b.put_int(starting_from)
-      b.put_int(number_returned)
-      b.append!(BSON::BSON_C.serialize(document).to_s)
+      b = ::BinUtils.append_int32_le!(nil, flags)
+      ::BinUtils.append_int64_le!(b, cursor_id)
+      ::BinUtils.append_int32_le!(b, starting_from, number_returned)
+      b << document.to_bson
 
       header(b) + b.to_s
     end
@@ -34,12 +32,7 @@ module Fake
       request_id = 0
       op_code = 0
 
-      h = BSON::ByteBuffer.new
-      h.put_int(length)
-      h.put_int(request_id)
-      h.put_int(response_to)
-      h.put_int(op_code)
-      h.to_s
+      h = ::BinUtils.append_int32_le!(nil, flags, request_id, response_to, op_code)
     end
 
     def response_to

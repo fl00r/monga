@@ -13,7 +13,7 @@ module Monga::Protocol
         msg = ::BinUtils.append_int32_le!(nil, 0)
         msg << full_name << Monga::NULL_BYTE
         ::BinUtils.append_int32_le!(msg, flags)
-        msg << BSON::BSON_C.serialize(query).to_s
+        msg << query.to_bson
         msg
       end
     end

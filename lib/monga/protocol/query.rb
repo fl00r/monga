@@ -26,8 +26,8 @@ module Monga::Protocol
         msg = ::BinUtils.append_int32_le!(nil, flags)
         msg << full_name << Monga::NULL_BYTE
         ::BinUtils.append_int32_le!(msg, skip, limit)
-        msg << BSON::BSON_C.serialize(query).to_s
-        msg << BSON::BSON_C.serialize(selector).to_s if selector.any?
+        msg << query.to_bson
+        msg << selector.to_bson if selector.any?
         msg
       end
     end

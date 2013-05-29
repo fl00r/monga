@@ -15,10 +15,11 @@ module Monga::Protocol
         case documents
         when Array
           documents.each do |doc|
-            msg << BSON::BSON_C.serialize(doc).to_s
+            msg << doc.to_bson
           end
         when Hash
-          msg << BSON::BSON_C.serialize(documents).to_s
+          # msg << BSON::BSON_C.serialize(documents).to_s
+          msg << documents.to_bson
         end
         msg
       end

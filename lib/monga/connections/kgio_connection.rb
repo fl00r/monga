@@ -1,7 +1,10 @@
 require 'kgio'
-require 'io/nonblock' # ha?
+
+# Toy blocking connection over TCP
 module Monga::Connections
   class KGIOConnection
+    TO_RECV = 512
+
     def self.connect(host, port, timeout)
       new(host, port, timeout)
     end
@@ -10,6 +13,7 @@ module Monga::Connections
       @host, @port, @timout = host, port, timeout
       @connected = true
       @buffer = Buffer.new
+      @tmp = ""
     end
 
     def connected?
@@ -20,10 +24,10 @@ module Monga::Connections
     def socket
       @socket ||= begin
         sock = Kgio::TCPSocket.new(@host, @port)
+        # MacOS doesn't support autopush
         sock.kgio_autopush = true unless RUBY_PLATFORM['darwin']
         # check connection
         sock.kgio_write ""
-        # Macos doesn't support autopush
         @connected = true
         sock
       end
@@ -31,18 +35,19 @@ module Monga::Connections
       nil
     end
 
-    # Fake answer, as far as we are blocking
+    # Fake answer, as far as we are blocking,
+    # but we should support API
     def responses
       0
     end
 
     def send_command(msg, request_id=nil, &cb)
       raise Errno::ECONNREFUSED, "Connection Refused" unless socket
-      socket.kgio_write msg.to_s
+      socket.kgio_write msg
       if cb
         read_socket
 
-        message = @buffer.responses.shift
+        message = @buffer.first
         rid = message[2]
 
         fail "Returned Request Id is not equal to sended one (#{rid} != #{request_id}), #{message}" if rid != request_id
@@ -58,19 +63,24 @@ module Monga::Connections
     end
 
     def read_socket
-      torecv = 512
-      length = nil
-      buf = ''.force_encoding('ASCII-8BIT')
-      tmp = ''
-      while torecv > 0
-        resp = socket.kgio_read(torecv, tmp)
-        raise Errno::ECONNREFUSED.new "Nil was return. Closing connection" unless resp
-        buf << resp
-        size = buf.bytesize
-        length ||= ::BinUtils.get_int32_le(buf) if size > 4
-        torecv = length - size if length
+      while @buffer.buffer_size < 4
+        unless socket.kgio_read(TO_RECV, @tmp)
+          raise Errno::ECONNREFUSED.new "Nil was return. Closing connection"
+        end
+
+        @buffer.append(@tmp)
+
+        size = @buffer.buffer_size
+        if size >= 4
+          length = ::BinUtils.get_int32_le(@buffer.buffer)  
+
+          torecv = length - size
+          if torecv > 0
+            socket.read(torecv, @tmp)
+            @buffer.append(@tmp)
+          end
+        end
       end
-      @buffer.append(buf)
     end
 
     def primary?
@@ -83,7 +93,7 @@ module Monga::Connections
       request_id = req.request_id
       socket.kgio_write command
       read_socket
-      message = @buffer.responses.shift
+      message = @buffer.first
       @primary = message.last.first["ismaster"]
       yield @primary ? :primary : :secondary
     rescue => e
