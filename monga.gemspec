@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = "monga"
-  spec.version       = "0.0.6"
+  spec.version       = "0.0.7"
   spec.authors       = ["Petr Yanovich"]
   spec.email         = ["fl00r@yandex.ru"]
   spec.description   = %q{Yet another MongoDB Ruby Client}
