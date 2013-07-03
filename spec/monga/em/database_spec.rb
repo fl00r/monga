@@ -56,6 +56,26 @@ describe Monga::Database do
     end
   end
 
+  # DROP DATABASE
+
+  describe "dropping database" do
+    it "should drop database and all its data" do
+      EM.run do
+        @collection.safe_insert(foo: "bar") do
+          @collection.count do |err, count|
+            count.must_equal 1
+            @db.drop do
+              @collection.count do |err, count|
+                count.must_equal 0
+                EM.stop
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
   # INDEXES
 
   describe "indexes" do
@@ -89,10 +109,8 @@ describe Monga::Database do
   describe "getLastError" do
     before do
       EM.run do
-        @collection.drop_indexes do
-          @collection.safe_ensure_index({ personal_id: 1 }, { unique: true, sparse: true }) do
-            EM.stop
-          end
+        @collection.safe_ensure_index({ personal_id: 1 }, { unique: true, sparse: true }) do
+          EM.stop
         end
       end
     end

@@ -98,6 +98,16 @@ module Monga
       run_cmd(cmd, blk)
     end
 
+    # Drop current database
+    #
+    #   db.drop
+    #
+    def drop(&blk)
+      cmd = {}
+      cmd[:dropDatabase] = 1
+      run_cmd(cmd, blk)
+    end
+
     # Create collection.
     #
     #   db.create_collection("myCollection"){ |err, resp| ... }

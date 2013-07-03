@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = "monga"
-  spec.version       = "0.0.7"
+  spec.version       = "0.0.8"
   spec.authors       = ["Petr Yanovich"]
   spec.email         = ["fl00r@yandex.ru"]
   spec.description   = %q{Yet another MongoDB Ruby Client}
@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "kgio"
   spec.add_development_dependency "em-synchrony"
 
-  spec.add_dependency "bson", ["~> 2.0.0.beta"]
+  spec.add_dependency "bson", ["~> 2.0.0.rc1"]
   # spec.add_dependency "bson"
   # spec.add_dependency "bson_ext"
   spec.add_dependency "bin_utils"

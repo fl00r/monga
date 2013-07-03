@@ -28,6 +28,17 @@ describe Monga::Database do
     @db.eval("1+1")["retval"].must_equal 2.0
   end
 
+  # DROP DATABASE
+
+  describe "dropping database" do
+    it "should drop database and all its data" do
+      @collection.safe_insert(foo: "bar")
+      @collection.count.must_equal 1
+      @db.drop
+      @collection.count.must_equal 0
+    end
+  end
+
   # INDEXES
 
   describe "indexes" do
@@ -47,7 +58,6 @@ describe Monga::Database do
 
   describe "getLastError" do
     before do
-      @collection.drop_indexes
       @collection.safe_ensure_index({ personal_id: 1 }, { unique: true, sparse: true })
     end
 

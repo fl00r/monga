@@ -1,4 +1,4 @@
-gem "bson", "2.0.0.beta"
+gem "bson", "2.0.0.rc1"
 require "bson"
 require "bin_utils"
 require "logger"
