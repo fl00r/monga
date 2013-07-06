@@ -42,13 +42,13 @@ module Monga::Connections
         end
         @position = 0
 
-        @response
+        @response  unless @response.empty?
       end
     end
 
     def parse_meta
-      return  if @buffer_size < 36
       @response.clear
+      return  if @buffer_size < 36
       @response << ::BinUtils.get_int32_le(@buffer, @position)
       @response << ::BinUtils.get_int32_le(@buffer, @position += 4)
       @response << ::BinUtils.get_int32_le(@buffer, @position += 4)
