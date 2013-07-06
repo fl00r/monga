@@ -67,9 +67,9 @@ module Monga::Connections
       @str_io = nil  if @number_returned == @response[7]
 
       current_pos = @position
-      while (l = @buffer_size - @position) > 4    
+      while @number_returned > 0
         doc_length = ::BinUtils.get_int32_le(@buffer, @position)
-        break if l < doc_length
+        break if @buffer_size - @position < doc_length
         @number_returned -= 1
         @position += doc_length
       end
