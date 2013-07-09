@@ -64,23 +64,21 @@ module Monga::Connections
     end
 
     def parse_doc
-      @str_io = nil  if @number_returned == @response[7]
+      if @number_returned == @response[7]
+        @current_pos = @position
+        @str_io = nil
+      end
 
-      current_pos = @position
       while @number_returned > 0
+        break if @buffer_size - @position < 4
         doc_length = ::BinUtils.get_int32_le(@buffer, @position)
         break if @buffer_size - @position < doc_length
         @number_returned -= 1
         @position += doc_length
       end
 
-      if @str_io
-        @str_io << @buffer[current_pos..@position]
-      else
-        @str_io = StringIO.new @buffer[current_pos..@position]
-      end
-
       if @number_returned == 0
+        @str_io = StringIO.new @buffer[@current_pos..@position]
         @str_io.rewind
         @response[7].times do
           @response[-1] << BSON::Document.from_bson(@str_io)
