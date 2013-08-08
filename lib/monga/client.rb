@@ -18,6 +18,7 @@ module Monga
     def initialize(opts = {})
       @opts = opts
       @opts[:type] ||= :block
+      @opts[:timeout] ||= 10
 
       sanitize_opts!
       create_client

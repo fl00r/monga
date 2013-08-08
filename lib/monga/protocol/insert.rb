@@ -18,7 +18,6 @@ module Monga::Protocol
             msg << doc.to_bson
           end
         when Hash
-          # msg << BSON::BSON_C.serialize(documents).to_s
           msg << documents.to_bson
         end
         msg

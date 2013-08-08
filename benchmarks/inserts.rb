@@ -1,7 +1,8 @@
 require 'benchmark'
+require 'em-synchrony'
 
-TOTAL_INSERTS = 10000
-TOTAL_READS = 50
+TOTAL_INSERTS = 1000
+TOTAL_READS = 20
 
 chars = ('a'..'z').to_a
 DOCS = [10, 100, 1000, 10000].map do |size|
@@ -53,14 +54,14 @@ fork do
 
     DOCS.each do |size, doc|
       GC.start
-      x.report("Monga: Inserting #{size}b document") do
+      x.report("Monga (blocking): Inserting #{size}b document") do
         TOTAL_INSERTS.times do
           collection.safe_insert(doc)
         end
       end
 
       GC.start
-      x.report("Monga: Reading #{size}b documents") do
+      x.report("Monga (blocking): Reading #{size}b documents") do
         TOTAL_READS.times do
           collection.find.all
         end
