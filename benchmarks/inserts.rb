@@ -1,8 +1,8 @@
 require 'benchmark'
 require 'em-synchrony'
 
-TOTAL_INSERTS = 1000
-TOTAL_READS = 20
+TOTAL_INSERTS = 5000
+TOTAL_READS = 40
 
 chars = ('a'..'z').to_a
 DOCS = [10, 100, 1000, 10000].map do |size|

@@ -2,6 +2,7 @@ module Monga
   class Request
     attr_reader :request_id, :connection
 
+    FLAGS = {}
     OP_CODES = {
       reply:           1,
       msg:          1000,
@@ -20,6 +21,7 @@ module Monga
       @collection_name = collection_name
       @options = options
 
+      check_flags
       @request_id = self.class.request_id
     end
 
@@ -68,6 +70,15 @@ module Monga
     end
 
     private
+
+    # Ouch!
+    def check_flags
+      return  unless @options[:query]
+      self.class::FLAGS.each do |k, byte|
+        v = @options[:query].delete(k)
+        @options[k] = v  if v
+      end
+    end
 
     def flags
       flags = 0

@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "kgio"
   spec.add_development_dependency "em-synchrony"
 
-  spec.add_dependency "bson", ["~> 2.0.0.rc1"]
+  spec.add_dependency "bson", ["2.0.0.rc1"]
   # spec.add_dependency "bson"
   # spec.add_dependency "bson_ext"
   spec.add_dependency "bin_utils"

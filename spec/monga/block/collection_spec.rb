@@ -124,6 +124,10 @@ describe Monga::Collection do
     it "should count all docs with limit and skip" do
       @collection.count(query: { artist: "Madonna" }, limit: 5, skip: 6).must_equal 4
     end
+
+    it "should work with flags" do
+      @collection.count(query: { artist: "Madonna" }, limit: 5, skip: 6, slave_ok: true)
+    end
   end
 
   # ENSURE/DROP INDEX
