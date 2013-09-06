@@ -62,8 +62,8 @@ module Monga
     #     fsync: true, 
     #     wtimout: 100){ |err, resp| ... }
     #
-    def get_last_error(connection, opts = {}, &blk)
-      raise_last_error(connection, opts, &blk)
+    def get_last_error(collection, opts = {}, &blk)
+      raise_last_error(collection, opts, &blk)
     rescue => e
       return e
     end
@@ -246,7 +246,6 @@ module Monga
     def run_cmd(cmd, ret_blk, &resp_blk)
       connection = cmd.delete :connection
       connection ||= @client.aquire_connection
-
       options = {}
       options[:query] = cmd
 

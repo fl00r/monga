@@ -21,13 +21,19 @@ module Monga::Connections
     # If timeout is defined then collect request and start timeout.
     # If timeout is not defined or zero then return exception.
     def send_command(msg, request_id = nil, &cb)
-      if @timeout && @timeout > 0 
+      if @found_connection && @found_connection.connected?
         @requests[request_id] = [msg, cb] if cb
-        set_timeout unless @pending_timeout
-        find_server! unless @pending_server
+        server_found!
       else
-        error = Monga::Exceptions::Disconnected.new "Can't find appropriate server (all disconnected) without timeout"
-        cb.call(error) if cb
+        @found_connection = nil
+        if @timeout && @timeout > 0 
+          @requests[request_id] = [msg, cb] if cb
+          set_timeout unless @pending_timeout
+          find_server! unless @pending_server
+        else
+          error = Monga::Exceptions::Disconnected.new "Can't find appropriate server (all disconnected) without timeout"
+          cb.call(error) if cb
+        end
       end
     end
 
@@ -53,13 +59,16 @@ module Monga::Connections
     # Find server unless server is found
     def find_server!(i = 0)
       @pending_server = true
-      if @pending_timeout && !@timeout_happend
+      if @pending_timeout && @timeout_happend
         size = @client.clients.size
         client = @client.clients[i%size]
         client.force_status! do |status|
+          p status
           if status == :primary && [:primary, :primary_preferred, :secondary_preferred].include?(@client.read_pref)
+            @found_connection ||= @client.aquire_connection
             server_found!
           elsif status == :secondary && [:secondary, :primary_preferred, :secondary_preferred].include?(@client.read_pref)
+            @found_connection ||= @client.aquire_connection
             server_found!
           else
             EM::Timer.new(WAIT) do
@@ -80,7 +89,7 @@ module Monga::Connections
       @timeout_happend = false
       @requests.keys.each do |request_id|
         msg, blk = @requests.delete request_id
-        @client.aquire_connection.send_command(msg, request_id, &blk)
+        @found_connection.send_command(msg, request_id, &blk)
       end
     end
   end

@@ -24,11 +24,12 @@ module Monga::Clients
         end
       end
 
+      @requests = {}
       @proxy_connection = Monga::Connection.proxy_connection_class(opts[:type], self)
     end
 
     # Aquires connection due to read_pref option
-    def aquire_connection
+    def aquire_connection(start = nil, &blk)
       server = case @read_pref
       when :primary
         primary
@@ -43,8 +44,34 @@ module Monga::Clients
       else
         raise ArgumentError, "`#{@read_pref}` is not valid read preferrence, use :primary, :primary_preferred, :secondary, or :secondary_preferred"
       end
+      if server
+        blk.call server
+      else
+        find_server! unless start
+        start ||= Time.now.to_i
+        if start + @timeout > Time.now.to_i
+          ::EM.add_timer(0.01) do
+            aquire_connection(start, &blk)
+          end
+        else
+          raise "Can't aquire server"
+        end
+      end
+    end
 
-      server || @proxy_connection
+    def find_server!(i = 0)
+        size = clients.size
+        client = clients[i%size]
+        client.force_status! do |status|
+          p status
+          if status == :primary && [:primary, :primary_preferred, :secondary_preferred].include?(read_pref)
+          elsif status == :secondary && [:secondary, :primary_preferred, :secondary_preferred].include?(read_pref)
+          else
+            EM::Timer.new(0.1) do
+              find_server!(i+1)
+            end
+          end
+        end
     end
 
     # Fetch primary server
