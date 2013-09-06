@@ -4,6 +4,7 @@ module Monga::Connections
   class EMConnection < EM::Connection
     include EM::Deferrable
 
+    attr_writer :primary
     attr_reader :responses, :host, :port
 
     def initialize(host, port, timeout)

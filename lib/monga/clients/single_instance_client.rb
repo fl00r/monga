@@ -38,6 +38,7 @@ module Monga::Clients
       if connected?
         conn = aquire_connection
         conn.is_master? do |status|
+          @connection_pool.connections.each{ |c| c.primary = true  if status == :primary}
           @status = status
           yield(@status) if block_given?
         end

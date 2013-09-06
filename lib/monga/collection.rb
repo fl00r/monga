@@ -1,6 +1,6 @@
 module Monga
   class Collection
-    attr_reader :collection_name
+    attr_reader :collection_name, :db
 
     def initialize(db, collection_name)
       @db = db
@@ -21,22 +21,12 @@ module Monga
       options[:query] = query
       options[:selector] = selector
       options.merge!(opts)
-      Monga::Cursor.create(connection, db_name, collection_name, options)
+      Monga::Cursor.create(self, db_name, collection_name, options)
     end
     alias :find :query
 
     def find_one(query = {}, selector = {}, opts = {})
-      options = {}
-      options[:query] = query
-      options[:selector] = selector
-      options.merge!(opts)
-      Monga::Cursor.create(connection, db_name, collection_name, options).first do |err, resp|
-        if block_given?
-          yield(err, resp)
-        else
-          err ? raise(err) : resp
-        end
-      end
+      query(query, selector, opt).first
     end
     alias :first :find_one
 
@@ -44,7 +34,9 @@ module Monga
       options = {}
       options[:documents] = document
       options.merge!(opts)
-      Monga::Protocol::Insert.new(connection, db_name, collection_name, options).perform
+      Monga::Protocol::Insert.new(self, db_name, collection_name, options).perform do |req|
+        yield(req)  if block_given?
+      end
     end
 
     def update(query = {}, update = {}, flags = {})
@@ -52,14 +44,16 @@ module Monga
       options[:query] = query
       options[:update] = update
       options.merge!(flags)
-      Monga::Protocol::Update.new(connection, db_name, collection_name, options).perform
+      Monga::Protocol::Update.new(self, db_name, collection_name, options).perform
     end
 
     def delete(query = {}, opts = {})
       options = {}
       options[:query] = query
       options.merge!(opts)
-      Monga::Protocol::Delete.new(connection, db_name, collection_name, options).perform
+      Monga::Protocol::Delete.new(self, db_name, collection_name, options).perform do |req|
+        yield(req)  if block_given?
+      end
     end
     alias :remove :delete
 
@@ -200,12 +194,17 @@ module Monga
               opts[k] = v if v != nil
             end
           end
-          req = #{meth}(*args)
-          @db.raise_last_error(req.connection, opts) do |err, resp|
-            if block_given?
-              yield(err, resp)
-            else
-              err ? raise(err) : resp
+          #{meth}(*args) do |req|
+            @db.raise_last_error(req.collection, opts) do |err, resp|
+              if block_given?
+                yield(err, resp)
+              else
+                if err
+                  raise(err)
+                else
+                  return resp
+                end
+              end
             end
           end
         end
@@ -213,10 +212,6 @@ module Monga
     end
 
     private
-
-    def connection
-      @db.client.aquire_connection
-    end
 
     def db_name
       @db.name

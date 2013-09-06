@@ -1,6 +1,6 @@
 module Monga
   class Request
-    attr_reader :request_id, :connection
+    attr_reader :request_id, :collection, :connection
 
     FLAGS = {}
     OP_CODES = {
@@ -15,8 +15,8 @@ module Monga
       kill_cursors: 2007,
     }
 
-    def initialize(connection, db_name, collection_name, options = {})
-      @connection = connection
+    def initialize(collection, db_name, collection_name, options = {})
+      @collection = collection
       @db_name = db_name
       @collection_name = collection_name
       @options = options
@@ -34,19 +34,19 @@ module Monga
     end
 
     # Fire and Forget
-    def perform
-      @connection.send_command(command, @request_id)
-      self
+    def perform(&blk)
+      aquire_connection do |connection|
+        connection.send_command(command, @request_id)
+        blk.call(self)  if blk
+      end
     end
 
     # Fire and wait
     def callback_perform
-      @connection.send_command(command, @request_id) do |data|
-        err, resp = parse_response(data)
-        if block_given?
+      aquire_connection do |connection|
+        connection.send_command(command, @request_id) do |data|
+          err, resp = parse_response(data)
           yield(err, resp)
-        else
-          err ? raise(err) : resp
         end
       end
     end
@@ -70,6 +70,17 @@ module Monga
     end
 
     private
+
+    def aquire_connection
+      if @connection
+        yield @connection
+      else
+        @collection.db.client.aquire_connection do |connection|
+          @connection = connection
+          yield connection
+        end
+      end
+    end
 
     # Ouch!
     def check_flags

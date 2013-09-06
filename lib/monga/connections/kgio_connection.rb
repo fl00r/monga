@@ -5,6 +5,8 @@ module Monga::Connections
   class KGIOConnection
     TO_RECV = 512
 
+    attr_writer :primary
+
     def self.connect(host, port, timeout)
       new(host, port, timeout)
     end
@@ -32,6 +34,7 @@ module Monga::Connections
         sock
       end
     rescue => e
+      Monga.logger.error e.message
       nil
     end
 
@@ -97,6 +100,7 @@ module Monga::Connections
       @primary = message.last.first["ismaster"]
       yield @primary ? :primary : :secondary
     rescue => e
+      Monga.logger.error e.message
       close
       yield nil
     end

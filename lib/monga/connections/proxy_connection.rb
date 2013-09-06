@@ -13,6 +13,7 @@ module Monga::Connections
       @client = client
       @timeout = @client.timeout
       @requests = {}
+      find_server!
     end
 
     # If timeout is defined then collect request and start timout.

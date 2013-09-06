@@ -2,7 +2,7 @@ module Monga
   class Connection
     extend Forwardable
 
-    def_delegators :@connection, :connected?, :responses, :send_command, :is_master?, :port, :primary?
+    def_delegators :@connection, :connected?, :responses, :send_command, :is_master?, :port, :primary?, :primary=
 
     attr_reader :type
 

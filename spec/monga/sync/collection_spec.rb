@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Monga::Collection do
   before do
     EM.synchrony do
-      @client = Monga::Client.new(type: :sync, pool_size: 10)
+      @client = Monga::Client.new(type: :sync, pool_size: 10, servers: ["127.0.0.1:27017", "127.0.0.1:27018", "127.0.0.1:27019"])
       @db = @client["dbTest"]
       @collection = @db["testCollection"]
       @collection.safe_remove
@@ -12,7 +12,7 @@ describe Monga::Collection do
         docs << { artist: "Madonna", title: "Track #{i+1}" }
         docs << { artist: "Radiohead", title: "Track #{i+1}" }
       end
-      @collection.safe_insert(docs)
+      @collection.safe_insert(docs, w: 2)
       EM.stop
     end
   end
@@ -50,7 +50,7 @@ describe Monga::Collection do
   describe "insert" do
     before do
       EM.synchrony do
-        @collection.safe_ensure_index({ "personal_id" => 1 }, { unique: true, sparse: true })
+        @collection.safe_ensure_index({ personal_id: 1 }, { unique: true, sparse: true })
         EM.stop
       end
     end
