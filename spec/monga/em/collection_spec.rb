@@ -377,30 +377,4 @@ describe Monga::Collection do
     #   end
     # end
   end
-
-  describe "secondary" do
-    before do
-      @primary_client = Monga::Client.new(type: :block, pool_size: 10, servers: ["127.0.0.1:27017", "127.0.0.1:27018", "127.0.0.1:27019"], read_pref: :primary)
-      @secondary_client = Monga::Client.new(type: :block, pool_size: 10, servers: ["127.0.0.1:27017", "127.0.0.1:27018", "127.0.0.1:27019"], read_pref: :secondary)
-      @primary_db = @primary_client["dbTest"]
-      @primary_collection = @primary_db["testCollection"]
-      @primary_collection.safe_remove
-      docs = []
-      10.times do |i|
-        docs << { artist: "Madonna", title: "Track #{i+1}" }
-        docs << { artist: "Radiohead", title: "Track #{i+1}" }
-      end
-      @primary_collection.safe_insert(docs)
-      @secondary_db = @secondary_client["dbTest"]
-      @secondary_collection = @secondary_db["testCollection"]
-    end
-
-    it "should fail on count on slave" do
-      proc{ @secondary_collection.count(query: { artist: "Madonna" }, limit: 5, skip: 6) }.must_raise Monga::Exceptions::QueryFailure
-    end
-
-    it "should run with slave_ok" do
-      @secondary_collection.count(query: { artist: "Madonna" }, limit: 5, skip: 6, slave_ok: true).must_equal 4
-    end
-  end
 end
