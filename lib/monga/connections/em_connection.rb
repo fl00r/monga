@@ -105,7 +105,7 @@ module Monga::Connections
 
     def is_master?
       reconnect unless @connected
-      req = Monga::Protocol::Query.new(self, "admin", "$cmd", query: {"isMaster" => 1}, limit: 1)
+      req = Monga::Protocol::Query.new({ db_name: "admin", collection_name: "$cmd" }, query: {"isMaster" => 1}, limit: 1)
       command = req.command
       request_id = req.request_id
       blk = proc do |data|

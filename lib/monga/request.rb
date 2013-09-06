@@ -2,7 +2,7 @@ module Monga
   class Request
     attr_reader :request_id, :collection, :connection
 
-    FLAGS = {}
+    # FLAGS = {}
     OP_CODES = {
       reply:           1,
       msg:          1000,
@@ -15,13 +15,14 @@ module Monga
       kill_cursors: 2007,
     }
 
-    def initialize(collection, db_name, collection_name, options = {})
-      @collection = collection
-      @db_name = db_name
-      @collection_name = collection_name
+    def initialize(request_opts, options = {})
+      @connection = request_opts[:connection]
+      @client = request_opts[:client]
+      @db_name = request_opts[:db_name]
+      @collection_name = request_opts[:collection_name]
       @options = options
 
-      check_flags
+      # check_flags
       @request_id = self.class.request_id
     end
 
@@ -37,16 +38,16 @@ module Monga
     def perform(&blk)
       aquire_connection do |connection|
         connection.send_command(command, @request_id)
-        blk.call(self)  if blk
+        blk.call(self)  if block_given?
       end
     end
 
     # Fire and wait
-    def callback_perform
+    def callback_perform(&blk)
       aquire_connection do |connection|
         connection.send_command(command, @request_id) do |data|
           err, resp = parse_response(data)
-          yield(err, resp)
+          blk.call(self, err, resp)
         end
       end
     end
@@ -75,7 +76,7 @@ module Monga
       if @connection
         yield @connection
       else
-        @collection.db.client.aquire_connection do |connection|
+        @client.aquire_connection do |connection|
           @connection = connection
           yield connection
         end

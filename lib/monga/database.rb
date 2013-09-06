@@ -245,11 +245,10 @@ module Monga
     #
     def run_cmd(cmd, ret_blk, &resp_blk)
       connection = cmd.delete :connection
-      connection ||= @client.aquire_connection
       options = {}
       options[:query] = cmd
-
-      Monga::CallbackCursor.new(connection, name, "$cmd", options).first do |err, resp|
+      cursor_opts = { client: @client, connection: connection, db_name: @name, collection_name: "$cmd"}
+      Monga::CallbackCursor.new(cursor_opts, options).first do |err, resp|
         res = make_response(err, resp, ret_blk, resp_blk)
         unless ret_blk
           return res 

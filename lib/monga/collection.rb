@@ -7,185 +7,101 @@ module Monga
       @collection_name = collection_name
     end
 
-    # Querying database. It returns cursor.
-    # Alias to collection#query is collection#find
-    #
-    #   cursor = collection.find(title: "Madonna")
-    #   # choose fields to return
-    #   cursor = collection.find({ title: "Madonna" }, { track: 1 })
-    #   # get all documents
-    #   cursor.all{ |err, docs| docs.each{ |doc| puts doc } }
-    #
     def query(query = {}, selector = {}, opts = {})
       options = {}
       options[:query] = query
       options[:selector] = selector
       options.merge!(opts)
-      Monga::Cursor.create(self, db_name, collection_name, options)
+      Monga::CallbackCursor.new(request_opts, options)
     end
     alias :find :query
 
-    def find_one(query = {}, selector = {}, opts = {})
-      query(query, selector, opt).first
+    def find_one(query = {}, selector = {}, opts = {}, &blk)
+      query(query, selector, opts).first(&blk)
     end
     alias :first :find_one
 
-    def insert(document, opts = {})
+    def insert(document, opts = {}, &blk)
       options = {}
       options[:documents] = document
       options.merge!(opts)
-      Monga::Protocol::Insert.new(self, db_name, collection_name, options).perform do |req|
-        yield(req)  if block_given?
-      end
+      Monga::Protocol::Insert.new(request_opts, options).perform(&blk)
     end
 
-    def update(query = {}, update = {}, flags = {})
+    def update(query = {}, update = {}, flags = {}, &blk)
       options = {}
       options[:query] = query
       options[:update] = update
       options.merge!(flags)
-      Monga::Protocol::Update.new(self, db_name, collection_name, options).perform
+      Monga::Protocol::Update.new(request_opts, options).perform(&blk)
     end
 
-    def delete(query = {}, opts = {})
+    def delete(query = {}, opts = {}, &blk)
       options = {}
       options[:query] = query
       options.merge!(opts)
-      Monga::Protocol::Delete.new(self, db_name, collection_name, options).perform do |req|
-        yield(req)  if block_given?
-      end
+      Monga::Protocol::Delete.new(request_opts, options).perform(&blk)
     end
     alias :remove :delete
 
-    def ensure_index(keys, opts={})
+    def ensure_index(keys, opts={}, &blk)
       doc = {}
       doc[:key] = keys
-      # Read docs about naming
       doc[:name] ||= keys.to_a.flatten * "_"
-      doc[:ns] = "#{db_name}.#{collection_name}"
+      doc[:ns] = "#{@db.name}.#{@collection_name}"
       doc.merge!(opts)
-      Monga::Protocol::Insert.new(connection, db_name, "system.indexes", {documents: doc}).perform
+      Monga::Protocol::Insert.new(index_request_opts, {documents: doc}).perform(&blk)
     end
 
-    def drop_index(indexes)
-      @db.drop_indexes(@collection_name, indexes) do |err, resp|
-        if block_given?
-          yield(err, resp)
-        else
-          raise err if err
-          return resp
-        end
-      end
+    def drop_index(indexes, &blk)
+      @db.drop_indexes(@collection_name, indexes, &blk)
     end
 
-    def drop_indexes
-      @db.drop_indexes(@collection_name, "*") do |err, resp|
-        if block_given?
-          yield(err, resp)
-        else
-          raise err if err
-          return resp
-        end
-      end
+    def drop_indexes(&blk)
+      @db.drop_indexes(@collection_name, "*", &blk)
     end
 
-    def get_indexes
-      Monga::Cursor.create(connection, db_name, "system.indexes").all do |err, resp|
-        if block_given?
-          yield(err, resp)
-        else
-          raise err if err
-          return resp
-        end
-      end
+    def get_indexes(&blk)
+      Monga::CallbackCursor.new(index_request_opts).all(&blk)
     end
 
-    def drop
-      @db.drop_collection(@collection_name) do |err, resp|
-        if block_given?
-          yield(err, resp)
-        else
-          raise err if err
-          return resp
-        end
-      end
+    def drop(&blk)
+      @db.drop_collection(@collection_name, &blk)
     end
 
     # You could pass query/limit/skip options
     #
     #    count(query: {artist: "Madonna"}, limit: 10, skip: 0)
     #
-    def count(opts = {})
-      @db.count(@collection_name, opts) do |err, resp|
-        if block_given?
-          yield(err, resp)
-        else
-          raise err if err
-          return resp
-        end
-      end
+    def count(opts = {}, &blk)
+      @db.count(@collection_name, opts, &blk)
     end
 
     def map_reduce(opts, &blk)
-      @db.map_reduce(@collection_name, opts) do |err, resp|
-        if block_given?
-          yield(err, resp)
-        else
-          raise err if err
-          return resp
-        end
-      end
+      @db.map_reduce(@collection_name, opts, &blk)
     end
 
     def aggregate(pipeline, &blk)
-      @db.aggregate(@collection_name, pipeline) do |err, resp|
-        if block_given?
-          yield(err, resp)
-        else
-          raise err if err
-          return resp
-        end
-      end
+      @db.aggregate(@collection_name, pipeline, &blk)
     end
 
     def distinct(opts, &blk)
-      @db.distinct(collection_name, opts) do |err, resp|
-        if block_given?
-          yield(err, resp)
-        else
-          raise err if err
-          return resp
-        end
-      end
+      @db.distinct(collection_name, opts, &blk)
     end
 
     def group(opts, &blk)
-      @db.group(collection_name, opts) do |err, resp|
-        if block_given?
-          yield(err, resp)
-        else
-          raise err if err
-          return resp
-        end
-      end
+      @db.group(collection_name, opts, &blk)
     end
 
     def text(search, opts = {}, &blk)
       opts[:search] = search
-      @db.text(collection_name, opts) do |err, resp|
-        if block_given?
-          yield(err, resp)
-        else
-          raise err if err
-          return resp
-        end
-      end
+      @db.text(collection_name, opts, &blk)
     end
 
     # Safe methods
     [:update, :insert, :delete, :remove, :ensure_index].each do |meth|
       class_eval <<-EOS
-        def safe_#{meth}(*args)
+        def safe_#{meth}(*args, &blk)
           last = args.last
           opts = {}
           if Hash === last
@@ -195,17 +111,7 @@ module Monga
             end
           end
           #{meth}(*args) do |req|
-            @db.raise_last_error(req.collection, opts) do |err, resp|
-              if block_given?
-                yield(err, resp)
-              else
-                if err
-                  raise(err)
-                else
-                  return resp
-                end
-              end
-            end
+            @db.raise_last_error(req.connection, opts, &blk)
           end
         end
       EOS
@@ -213,8 +119,20 @@ module Monga
 
     private
 
-    def db_name
-      @db.name
+    def request_opts
+      @request_opts ||= {
+        client: @db.client,
+        db_name: @db.name,
+        collection_name: @collection_name
+      }.freeze
+    end
+
+    def index_request_opts
+      @index_request_opts ||= {
+        client: @db.client,
+        db_name: @db.name,
+        collection_name: "system.indexes"
+      }.freeze
     end
   end
 end

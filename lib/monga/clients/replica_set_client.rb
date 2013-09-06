@@ -60,18 +60,17 @@ module Monga::Clients
     end
 
     def find_server!(i = 0)
-        size = clients.size
-        client = clients[i%size]
-        client.force_status! do |status|
-          p status
-          if status == :primary && [:primary, :primary_preferred, :secondary_preferred].include?(read_pref)
-          elsif status == :secondary && [:secondary, :primary_preferred, :secondary_preferred].include?(read_pref)
-          else
-            EM::Timer.new(0.1) do
-              find_server!(i+1)
-            end
+      size = clients.size
+      client = clients[i%size]
+      client.force_status! do |status|
+        if status == :primary && [:primary, :primary_preferred, :secondary_preferred].include?(read_pref)
+        elsif status == :secondary && [:secondary, :primary_preferred, :secondary_preferred].include?(read_pref)
+        else
+          EM::Timer.new(0.001) do
+            find_server!(i+1)
           end
         end
+      end
     end
 
     # Fetch primary server
