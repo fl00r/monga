@@ -62,8 +62,8 @@ module Monga
     #     fsync: true, 
     #     wtimout: 100){ |err, resp| ... }
     #
-    def get_last_error(collection, opts = {}, &blk)
-      raise_last_error(collection, opts, &blk)
+    def get_last_error(connection, opts = {}, &blk)
+      raise_last_error(connection, opts, &blk)
     rescue => e
       return e
     end
@@ -74,14 +74,13 @@ module Monga
     def raise_last_error(connection, opts = {}, &blk)
       cmd = {}
       cmd[:getLastError] = 1
-      cmd[:connection] = connection
 
       cmd[:j] = opts[:j] if opts[:j]
       cmd[:fsync] = opts[:fsync] if opts[:fsync]
       cmd[:w] = opts[:w] if opts[:w]
       cmd[:wtimeout] = opts[:wtimeout] if opts[:wtimeout]
 
-      run_cmd(cmd, blk)
+      run_cmd(cmd, blk, connection)
     end
 
     # Obviously dropping collection
@@ -243,12 +242,11 @@ module Monga
 
     # Underlying command sending
     #
-    def run_cmd(cmd, ret_blk, &resp_blk)
-      connection = cmd.delete :connection
+    def run_cmd(cmd, ret_blk, connection = nil, &resp_blk)
       options = {}
       options[:query] = cmd
-      cursor_opts = { client: @client, connection: connection, db_name: @name, collection_name: "$cmd"}
-      Monga::CallbackCursor.new(cursor_opts, options).first do |err, resp|
+      options[:connection] = connection  if connection
+      Monga::CallbackCursor.new(@client, @name, "$cmd", options).first do |err, resp|
         res = make_response(err, resp, ret_blk, resp_blk)
         unless ret_blk
           return res 

@@ -5,23 +5,15 @@ module Monga::Clients
     attr_reader :status
 
     def initialize(opts)
-      pool_size = opts[:pool_size]
-      if pool_size && pool_size > 1
-        @connection_pool = Monga::ConnectionPool.new(opts)
-      else
-        @connection = Monga::Connection.new(opts)
-      end
+      opts[:pool_size] ||= 1
+      @connection_pool = Monga::ConnectionPool.new(opts)
     end
 
     # If single connection then return it.
     # If connection pool then aquire connection from pool.
     # If connection is not connected, then status will be setted to nil.
     def aquire_connection
-      conn = if @connection_pool
-        @connection_pool.aquire_connection
-      else
-        @connection
-      end
+      conn = @connection_pool.aquire_connection
       @status = nil unless conn.connected?
       conn
     end

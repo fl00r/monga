@@ -2,22 +2,18 @@ module Monga
   class Cursor
     attr_reader :cursor_id
 
-    def self.create(collection, db_name, collection_name, options = {}, flags = {})
-      # if connection.type == :em
-        CallbackCursor.new(collection, db_name, collection_name, options, flags)
-      # else
-        # BlockCursor.new(connection, db_name, collection_name, options, flags)
-      # end
-    end
-
     CURSORS = {}
     CLOSED_CURSOR = 0
     # Batch kill cursors marked to be killed each CLOSE_TIMEOUT seconds
     CLOSE_TIMEOUT = 1
 
-    def initialize(cursor_opts, options = {}, flags = {})
-      @cursor_opts = cursor_opts.dup
+    def initialize(client, db_name, collection_name, options = {}, flags = {})
+      @client = client
+      @db_name = db_name
+      @collection_name = collection_name
+      @connection = options.delete :connection
       @options = options
+      # WTF??!
       @options.merge!(flags)
 
       @fetched_docs = []
@@ -98,12 +94,26 @@ module Monga
           block.call(err)
         else
           opts = @options.merge(cursor_id: @cursor_id, batch_size: batch_size)
-          Monga::Protocol::GetMore.new(@cursor_opts, opts).callback_perform(&blk)
+          aquire_connection do |connection|
+            Monga::Protocol::GetMore.new(connection, @db_name, @collection_name, opts).callback_perform(&blk)
+          end
         end
       else
-        Monga::Protocol::Query.new(@cursor_opts, @options).callback_perform do |req, err, resp|
-          @cursor_opts[:connection] = req.connection
-          blk.call(err, resp)
+        aquire_connection do |connection|
+          Monga::Protocol::Query.new(connection, @db_name, @collection_name, @options).callback_perform do |err, resp|
+            blk.call(err, resp)
+          end
+        end
+      end
+    end
+
+    def aquire_connection
+      if @connection
+        yield @connection
+      else
+        @client.aquire_connection do |connection|
+          @connection = connection
+          yield connection
         end
       end
     end

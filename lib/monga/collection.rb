@@ -12,7 +12,7 @@ module Monga
       options[:query] = query
       options[:selector] = selector
       options.merge!(opts)
-      Monga::CallbackCursor.new(request_opts, options)
+      Monga::CallbackCursor.new(client, db_name, collection_name, options)
     end
     alias :find :query
 
@@ -22,35 +22,76 @@ module Monga
     alias :first :find_one
 
     def insert(document, opts = {}, &blk)
+      safe = opts.delete :safe
+      safe_opts = get_safe_opts(opts)  if safe
       options = {}
       options[:documents] = document
       options.merge!(opts)
-      Monga::Protocol::Insert.new(request_opts, options).perform(&blk)
+      client.aquire_connection do |connection|
+        Monga::Protocol::Insert.new(connection, db_name, collection_name, options).perform
+        @db.get_last_error(connection, safe_opts, &blk)  if safe
+      end
+    end
+
+    def safe_insert(document, opts = {}, &blk)
+      opts[:safe] = true
+      insert(document, opts, &blk)
     end
 
     def update(query = {}, update = {}, flags = {}, &blk)
+      safe = flags.delete :safe
+      safe_opts = get_safe_opts(flags)  if safe
       options = {}
       options[:query] = query
       options[:update] = update
       options.merge!(flags)
-      Monga::Protocol::Update.new(request_opts, options).perform(&blk)
+      client.aquire_connection do |connection|
+        Monga::Protocol::Update.new(connection, db_name, collection_name, options).perform
+        @db.get_last_error(connection, safe_opts, &blk)  if safe
+      end
+    end
+
+    def safe_update(query = {}, update = {}, flags = {}, &blk)
+      flags[:safe] = true
+      update(query, update, flags, &blk)
     end
 
     def delete(query = {}, opts = {}, &blk)
+      safe = opts.delete :safe
+      safe_opts = get_safe_opts(opts)  if safe
       options = {}
       options[:query] = query
       options.merge!(opts)
-      Monga::Protocol::Delete.new(request_opts, options).perform(&blk)
+      client.aquire_connection do |connection|
+        Monga::Protocol::Delete.new(connection, db_name, collection_name, options).perform
+        @db.get_last_error(connection, safe_opts, &blk)  if safe
+      end
     end
     alias :remove :delete
 
-    def ensure_index(keys, opts={}, &blk)
-      doc = {}
-      doc[:key] = keys
-      doc[:name] ||= keys.to_a.flatten * "_"
-      doc[:ns] = "#{@db.name}.#{@collection_name}"
-      doc.merge!(opts)
-      Monga::Protocol::Insert.new(index_request_opts, {documents: doc}).perform(&blk)
+    def safe_delete(query = {}, opts = {}, &blk)
+      opts[:safe] = true
+      delete(query, opts, &blk)
+    end
+    alias :safe_remove :safe_delete
+
+    def ensure_index(keys, opts = {}, &blk)
+      safe = opts.delete :safe
+      safe_opts = get_safe_opts(opts)  if safe
+      docs = { documents: {} }
+      docs[:documents][:key] = keys
+      docs[:documents][:name] ||= keys.to_a.flatten * "_"
+      docs[:documents][:ns] = "#{@db.name}.#{@collection_name}"
+      docs[:documents].merge!(opts)
+      client.aquire_connection do |connection|
+        Monga::Protocol::Insert.new(connection, db_name, "system.indexes", docs).perform
+        @db.get_last_error(connection, safe_opts, &blk)  if safe
+      end
+    end
+
+    def safe_ensure_index(keys, opts = {}, &blk)
+      opts[:safe] = true
+      ensure_index(keys, opts, &blk)
     end
 
     def drop_index(indexes, &blk)
@@ -62,7 +103,7 @@ module Monga
     end
 
     def get_indexes(&blk)
-      Monga::CallbackCursor.new(index_request_opts).all(&blk)
+      Monga::CallbackCursor.new(client, db_name, "system.indexes").all(&blk)
     end
 
     def drop(&blk)
@@ -98,41 +139,23 @@ module Monga
       @db.text(collection_name, opts, &blk)
     end
 
-    # Safe methods
-    [:update, :insert, :delete, :remove, :ensure_index].each do |meth|
-      class_eval <<-EOS
-        def safe_#{meth}(*args, &blk)
-          last = args.last
-          opts = {}
-          if Hash === last
-            [ :j, :w, :fsync, :wtimeout ].each do |k|
-              v = last.delete k
-              opts[k] = v if v != nil
-            end
-          end
-          #{meth}(*args) do |req|
-            @db.raise_last_error(req.connection, opts, &blk)
-          end
-        end
-      EOS
-    end
-
     private
 
-    def request_opts
-      @request_opts ||= {
-        client: @db.client,
-        db_name: @db.name,
-        collection_name: @collection_name
-      }.freeze
+    def client
+      @client ||= @db.client
     end
 
-    def index_request_opts
-      @index_request_opts ||= {
-        client: @db.client,
-        db_name: @db.name,
-        collection_name: "system.indexes"
-      }.freeze
+    def db_name
+      @db_name ||= @db.name
+    end
+
+    def get_safe_opts(opts)
+      safe_opts = {}
+      [ :j, :w, :fsync, :wtimeout ].each do |k|
+        v = opts.delete k
+        safe_opts[k] = v  unless v.nil?
+      end
+      safe_opts
     end
   end
 end

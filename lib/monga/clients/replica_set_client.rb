@@ -18,9 +18,7 @@ module Monga::Clients
         when Hash
           Monga::Clients::SingleInstanceClient.new(opts.merge(server))
         when String
-          h, p = server.split(":")
-          o = { host: h, port: p.to_i }
-          Monga::Clients::SingleInstanceClient.new(opts.merge(o))
+          Monga::Clients::SingleInstanceClient.new(opts.merge(server: server))
         end
       end
 
